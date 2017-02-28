@@ -4,6 +4,7 @@
 module Reflex.Internal.Extensions
   ( Exts
   , HasExts(..)
+  , HasEvents
   , ext
   ) where
 
@@ -23,6 +24,11 @@ type Exts = Map TypeRep Ext
 
 class HasExts s  where
   exts :: Lens' s Exts
+
+-- | A typeclass to ensure people don't dispatch events to states which shouldn't
+--   accept them.
+class (Typeable s, HasExts s) =>
+      HasEvents s
 
 ext
   :: forall a e.

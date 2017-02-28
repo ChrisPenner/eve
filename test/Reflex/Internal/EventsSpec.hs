@@ -1,4 +1,4 @@
-module Reflex.Internal.ActionSpec where
+module Reflex.Internal.EventsSpec where
 
 import Test.Hspec
 

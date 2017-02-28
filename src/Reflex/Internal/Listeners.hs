@@ -6,6 +6,7 @@
 module Reflex.Internal.Listeners
   ( HasEvents
   , dispatchEvent
+  , dispatchEvent_
   , dispatchEventAsync
   , addListener
   , removeListener
@@ -14,6 +15,7 @@ module Reflex.Internal.Listeners
 
 import Reflex.Internal.Extensions
 import Reflex.Internal.Async
+import Reflex.Internal.BaseMonad
 
 import Control.Monad.State
 import Control.Lens
@@ -22,11 +24,6 @@ import Data.Default
 import Data.Typeable
 import Data.Maybe
 import qualified Data.Map as M
-
--- | A typeclass to ensure people don't dispatch events to states which shouldn't
---   accept them.
-class (Typeable s, HasExts s) =>
-      HasEvents s
 
 dispatchEvent
   :: forall result eventType m s.
@@ -42,6 +39,16 @@ dispatchEvent evt = do
   results <-
     traverse ($ evt) (matchingListeners listeners :: [eventType -> m result])
   return (mconcat results :: result)
+
+dispatchEvent_
+  :: forall eventType m s.
+     (MonadState s m
+     ,HasEvents s
+     ,Typeable m
+     ,Typeable eventType)
+  => eventType -> m ()
+dispatchEvent_ = dispatchEvent
+
 
 addListener
   :: forall result eventType m s.
@@ -83,13 +90,8 @@ removeListener listenerId@(ListenerId _ eventType) = localListeners %= remover
 -- | This function takes an IO which results in some Event, it runs the IO
 -- asynchronously and dispatches the event
 dispatchEventAsync
-  :: (MonadState s m
-     ,MonadIO m
-     ,HasEvents s
-     ,HasAsyncQueue m s
-     ,Typeable event
-     ,Typeable m)
-  => IO event -> m ()
+  :: (Typeable event)
+  => IO event -> BaseMonad ()
 dispatchEventAsync ioEvent = dispatchActionAsync $ dispatchEvent <$> ioEvent
 
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
@@ -181,11 +183,9 @@ type Dispatcher = forall event. Typeable event =>
 -- > myAction :: Action s ()
 -- > myAction = onInit $ asyncEventProvider myTimer
 asyncEventProvider
-  :: forall m s.
-     (MonadState s m, Typeable m, HasEvents s, HasAsyncQueue m s, MonadIO m)
-  => (Dispatcher -> IO ()) -> m ()
+  :: (Dispatcher -> IO ()) -> BaseMonad ()
 asyncEventProvider asyncEventProv = asyncActionProvider $ eventsToActions asyncEventProv
   where
-    eventsToActions :: (Dispatcher -> IO ()) -> (m () -> IO ()) -> IO ()
+    eventsToActions :: (Dispatcher -> IO ()) -> (BaseMonad () -> IO ()) -> IO ()
     eventsToActions aEventProv dispatcher =
       aEventProv (dispatcher . dispatchEvent)

@@ -1,10 +1,14 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# language FlexibleInstances #-}
+{-# language MultiParamTypeClasses #-}
+{-# language ExistentialQuantification #-}
+{-# language ScopedTypeVariables #-}
 
 module Reflex.Internal.Async
-  ( HasAsyncQueue(..)
-  , dispatchActionAsync
+  ( dispatchActionAsync
   , asyncActionProvider
   ) where
+
+import Reflex.Internal.BaseMonad
 
 import Control.Monad
 import Control.Monad.State
@@ -13,23 +17,14 @@ import Control.Lens
 import Pipes
 import Pipes.Concurrent
 
-class (MonadState s m) =>
-      HasAsyncQueue m s  where
-  asyncQueue :: Lens' s (Output (m ()))
-
 dispatchActionAsync
-  :: (Monad m, MonadIO m, MonadState s m, HasAsyncQueue m s)
-  => IO (m ()) -> m ()
+  :: IO (BaseMonad ()) -> BaseMonad ()
 dispatchActionAsync asyncAction = do
   queue <- use asyncQueue
   let effect = (liftIO asyncAction >>= yield) >-> toOutput queue
   liftIO . void . forkIO $ runEffect effect >> performGC
 
-type ActionDispatcher m = m () -> IO ()
-
-asyncActionProvider
-  :: (MonadIO m, HasAsyncQueue m s)
-  => (ActionDispatcher m -> IO ()) -> m ()
+asyncActionProvider :: ((BaseMonad () -> IO ()) -> IO ()) -> BaseMonad ()
 asyncActionProvider provider = do
   queue <- use asyncQueue
   let dispatcher action =
