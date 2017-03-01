@@ -9,6 +9,7 @@ module Reflex.Internal.Listeners
   , dispatchEvent_
   , dispatchEventAsync
   , addListener
+  , addListener_
   , removeListener
   , asyncEventProvider
   ) where
@@ -75,6 +76,17 @@ addListener lFunc = do
           listId = ListenerId n (typeRep (Proxy :: Proxy event))
           prox = typeRep (Proxy :: Proxy event)
       in (list, listId, prox)
+
+addListener_
+  :: forall result eventType m s.
+     (MonadState s m
+     ,HasEvents s
+     ,Typeable m
+     ,Typeable eventType
+     ,Typeable result
+     ,Monoid result)
+  => (eventType -> m result) -> m ()
+addListener_ = void . addListener
 
 removeListener
   :: (MonadState s m, HasEvents s)
