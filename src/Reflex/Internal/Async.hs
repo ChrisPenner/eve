@@ -8,7 +8,7 @@ module Reflex.Internal.Async
   , asyncActionProvider
   ) where
 
-import Reflex.Internal.BaseMonad
+import Reflex.Internal.App
 
 import Control.Monad
 import Control.Monad.State
@@ -18,13 +18,13 @@ import Pipes
 import Pipes.Concurrent
 
 dispatchActionAsync
-  :: IO (BaseMonad ()) -> BaseMonad ()
+  :: IO (App ()) -> App ()
 dispatchActionAsync asyncAction = do
   queue <- use asyncQueue
   let effect = (liftIO asyncAction >>= yield) >-> toOutput queue
   liftIO . void . forkIO $ runEffect effect >> performGC
 
-asyncActionProvider :: ((BaseMonad () -> IO ()) -> IO ()) -> BaseMonad ()
+asyncActionProvider :: ((App () -> IO ()) -> IO ()) -> App ()
 asyncActionProvider provider = do
   queue <- use asyncQueue
   let dispatcher action =

@@ -7,7 +7,7 @@ import Fixtures
 import Reflex.Internal.Run
 import Reflex.Internal.Listeners
 import Reflex.Internal.Extensions
-import Reflex.Internal.BaseMonad
+import Reflex.Internal.App
 
 import Control.Monad.State
 import Control.Lens
@@ -20,9 +20,9 @@ basicAction = do
   addListener (const (store .= "new") :: CustomEvent -> State ExtState ())
   dispatchEvent_ CustomEvent
 
-delayedExit :: BaseMonad ()
+delayedExit :: App ()
 delayedExit = do
-  addListener (const exit :: CustomEvent -> BaseMonad ())
+  addListener (const exit :: CustomEvent -> App ())
   dispatchEventAsync (return CustomEvent)
   store .= "new"
 
@@ -32,17 +32,17 @@ removeListenersTest = do
   removeListener listId
   dispatchEvent_ CustomEvent
 
-asyncEventsTest :: BaseMonad ()
+asyncEventsTest :: App ()
 asyncEventsTest = do
-  addListener (const exit :: CustomEvent -> BaseMonad ())
+  addListener (const exit :: CustomEvent -> App ())
   asyncEventProvider (\d -> d CustomEvent)
   store .= "new"
 
 data OtherEvent = OtherEvent
-multiAsyncEventsTest :: BaseMonad ()
+multiAsyncEventsTest :: App ()
 multiAsyncEventsTest = do
-  addListener (const exit :: CustomEvent -> BaseMonad ())
-  addListener (const (store .= "new") :: OtherEvent -> BaseMonad ())
+  addListener (const exit :: CustomEvent -> App ())
+  addListener (const (store .= "new") :: OtherEvent -> App ())
   asyncEventProvider (\d -> d CustomEvent >> d OtherEvent)
 
 spec :: Spec

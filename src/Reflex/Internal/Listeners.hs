@@ -8,15 +8,28 @@ module Reflex.Internal.Listeners
   , dispatchEvent
   , dispatchEvent_
   , dispatchEventAsync
+
   , addListener
   , addListener_
   , removeListener
   , asyncEventProvider
+
+  , onInit
+  , afterInit
+  , beforeEvent
+  , beforeEvent_
+  , afterEvent
+  , afterEvent_
+  , onExit
+
+  , Listener
+  , ListenerId
   ) where
 
 import Reflex.Internal.Extensions
 import Reflex.Internal.Async
-import Reflex.Internal.BaseMonad
+import Reflex.Internal.App
+import Reflex.Internal.Events
 
 import Control.Monad.State
 import Control.Lens
@@ -25,6 +38,36 @@ import Data.Default
 import Data.Typeable
 import Data.Maybe
 import qualified Data.Map as M
+
+
+-- | Registers an action to be performed during the Initialization phase.
+--
+-- This phase occurs exactly ONCE when the editor starts up.
+-- Though arbitrary actions may be performed in the configuration block;
+-- it's recommended to embed such actions in the onInit event listener
+-- so that all event listeners are registered before anything Apps occur.
+onInit :: App result -> App ()
+onInit action = void $ addListener (const (void action) :: Init -> App ())
+
+afterInit :: App a -> App ()
+afterInit action = void $ addListener (const (void action) :: AfterInit -> App ())
+
+-- | Registers an action to be performed BEFORE each event phase.
+beforeEvent :: App a -> App ListenerId
+beforeEvent action = addListener (const (void action) :: BeforeEvent -> App ())
+
+beforeEvent_ :: App a -> App ()
+beforeEvent_ = void . beforeEvent
+
+-- | Registers an action to be performed BEFORE each event phase.
+afterEvent :: App a -> App ListenerId
+afterEvent action = addListener (const (void action) :: AfterEvent -> App ())
+
+afterEvent_ :: App a -> App ()
+afterEvent_ = void . afterEvent
+
+onExit :: App a -> App ()
+onExit action = void $ addListener (const $ void action :: Exit -> App ())
 
 dispatchEvent
   :: forall result eventType m s.
@@ -103,7 +146,7 @@ removeListener listenerId@(ListenerId _ eventType) = localListeners %= remover
 -- asynchronously and dispatches the event
 dispatchEventAsync
   :: (Typeable event)
-  => IO event -> BaseMonad ()
+  => IO event -> App ()
 dispatchEventAsync ioEvent = dispatchActionAsync $ dispatchEvent <$> ioEvent
 
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
@@ -146,10 +189,8 @@ localListeners = ext
 
 -- | This extracts all event listeners from a map of listeners which match the type of the provided event.
 matchingListeners
-  :: forall m s eventType result.
-     (MonadState s m
-     ,HasEvents s
-     ,Typeable m
+  :: forall m eventType result.
+     (Typeable m
      ,Typeable eventType
      ,Typeable result)
   => Listeners -> [eventType -> m result]
@@ -195,9 +236,9 @@ type Dispatcher = forall event. Typeable event =>
 -- > myAction :: Action s ()
 -- > myAction = onInit $ asyncEventProvider myTimer
 asyncEventProvider
-  :: (Dispatcher -> IO ()) -> BaseMonad ()
+  :: (Dispatcher -> IO ()) -> App ()
 asyncEventProvider asyncEventProv = asyncActionProvider $ eventsToActions asyncEventProv
   where
-    eventsToActions :: (Dispatcher -> IO ()) -> (BaseMonad () -> IO ()) -> IO ()
+    eventsToActions :: (Dispatcher -> IO ()) -> (App () -> IO ()) -> IO ()
     eventsToActions aEventProv dispatcher =
       aEventProv (dispatcher . dispatchEvent)

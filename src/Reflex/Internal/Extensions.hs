@@ -16,8 +16,11 @@ import Data.Typeable
 import Data.Default
 
 data Ext =
-  forall ext. Typeable ext =>
+  forall ext. (Typeable ext, Show ext) =>
               Ext ext
+
+instance Show Ext where
+  show (Ext a) = show a
 
 -- | A map of extension types to their current value.
 type Exts = Map TypeRep Ext
@@ -32,7 +35,7 @@ class (Typeable s, HasExts s) =>
 
 ext
   :: forall a e.
-     (Typeable a, Default a, HasExts e)
+    (Show a, Typeable a, Default a, HasExts e)
   => Lens' e a
 ext = lens getter setter
   where

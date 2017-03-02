@@ -6,13 +6,13 @@ import Fixtures
 import Reflex.Internal.Run
 import Reflex.Internal.Extensions
 import Reflex.Internal.Async
-import Reflex.Internal.BaseMonad
+import Reflex.Internal.App
 import Control.Lens
 
-exiter :: (BaseMonad () -> IO ()) -> IO ()
+exiter :: (App () -> IO ()) -> IO ()
 exiter dispatch = dispatch exit
 
-runWithInit :: BaseMonad () -> SpecM a BaseState
+runWithInit :: App () -> SpecM a BaseState
 runWithInit next = runIO $ reflex (next >> asyncActionProvider exiter)
 
 spec :: Spec

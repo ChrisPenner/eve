@@ -17,7 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Reflex
                      , Reflex.Internal.Async
-                     , Reflex.Internal.BaseMonad
+                     , Reflex.Internal.App
                      , Reflex.Internal.Events
                      , Reflex.Internal.Extensions
                      , Reflex.Internal.Listeners

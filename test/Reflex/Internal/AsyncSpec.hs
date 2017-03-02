@@ -6,12 +6,12 @@ import Fixtures
 import Control.Lens
 import Reflex.Internal.Run
 import Reflex.Internal.Listeners
-import Reflex.Internal.BaseMonad
+import Reflex.Internal.App
 import Reflex.Internal.Async
 
-asyncActionsTest :: BaseMonad ()
+asyncActionsTest :: App ()
 asyncActionsTest = do
-  addListener (const exit :: CustomEvent -> BaseMonad ())
+  addListener (const exit :: CustomEvent -> App ())
   asyncActionProvider (\d -> d exit)
   store .= "new"
 
