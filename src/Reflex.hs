@@ -33,7 +33,7 @@ module Reflex
   , HasEvents
   , ext
 
-  -- , runActionOver
+  , runAction
   , AppState(..)
   , exit
   ) where
