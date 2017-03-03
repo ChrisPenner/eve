@@ -18,7 +18,7 @@ import qualified Pipes.Parse as PP
 reflex :: App () -> IO AppState
 reflex initialize = do
   (output :: Output (App ()), input :: Input (App ())) <- spawn unbounded
-  flip execStateT (AppState mempty output) . runApp $ do
+  execApp (AppState mempty output) $ do
     initialize
     dispatchEvent_ Init
     dispatchEvent_ AfterInit

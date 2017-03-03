@@ -1,7 +1,7 @@
 module Reflex
   ( reflex
 
-  , App(..)
+  , App
   , Action
   , liftAction
 
