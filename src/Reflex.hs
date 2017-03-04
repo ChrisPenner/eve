@@ -39,7 +39,8 @@ module Reflex
   ) where
 
 import Reflex.Internal.Run
-import Reflex.Internal.App
+-- import Reflex.Internal.App
+import Reflex.Internal.AppF
 import Reflex.Internal.Listeners
 import Reflex.Internal.Async
 import Reflex.Internal.Extensions

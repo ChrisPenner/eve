@@ -28,8 +28,6 @@ import Control.Lens
 import Data.Default
 import Pipes.Concurrent
 
--- type Action s a = forall m. (Monad m, MonadState s m) => m a
-
 data AppState = AppState
   { _baseExts :: Exts
   , _asyncQueue :: Output (App ())
