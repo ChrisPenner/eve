@@ -42,10 +42,10 @@ import qualified Data.Map as M
 
 -- | Registers an action to be performed during the Initialization phase.
 --
--- This phase occurs exactly ONCE when the editor starts up.
+-- This phase occurs exactly ONCE when the app starts up.
 -- Though arbitrary actions may be performed in the configuration block;
 -- it's recommended to embed such actions in the onInit event listener
--- so that all event listeners are registered before anything Apps occur.
+-- so that all event listeners are registered before any dispatches occur.
 onInit :: App result -> App ()
 onInit action = void $ addListener (const (void action) :: Init -> App ())
 
@@ -142,8 +142,10 @@ removeListener listenerId@(ListenerId _ eventType) = localListeners %= remover
       in LocalListeners nextListenerId newListeners
     notMatch idA (Listener _ idB _) = idA /= idB
 
--- | This function takes an IO which results in some Event, it runs the IO
--- asynchronously and dispatches the event
+-- | This function takes an IO which results in some event, it runs the IO
+-- asynchronously and dispatches the event. Note that any listeners which are
+-- registered for the resulting event will still be run syncronously, only the
+-- code which generates the event is asynchronous.
 dispatchEventAsync
   :: (Typeable event)
   => IO event -> App ()
@@ -161,7 +163,7 @@ instance Show Listener where
     "<Listener #" ++ show n ++ ", " ++ show rep ++ ">"
 
 -- | An opaque reverence to a specific registered event-listener.
--- A ListenerId is used only to remove listeners later with 'Rasa.Internal.Listeners.removeListener'.
+-- A ListenerId is used only to remove listeners later with 'removeListener'.
 data ListenerId =
   ListenerId Int
              TypeRep
@@ -170,7 +172,7 @@ data ListenerId =
 instance Eq ListenerId where
   ListenerId a _ == ListenerId b _ = a == b
 
--- | A map of Event types to a list of listeners for that event
+-- | A map of event types to a list of listeners for that event
 type Listeners = M.Map TypeRep [Listener]
 
 -- | Store the listeners in extensions
@@ -210,7 +212,7 @@ getListener (Listener _ _ x) = cast x
 type Dispatcher = forall event. Typeable event =>
                                 event -> IO ()
 
--- | This allows long-running IO processes to provide Events to Rasa asyncronously.
+-- | This allows long-running IO processes to provide Events to the App asyncronously.
 --
 -- Don't let the type signature confuse you; it's much simpler than it seems.
 --
@@ -219,12 +221,12 @@ type Dispatcher = forall event. Typeable event =>
 -- Using the 'Dispatcher' type with asyncEventProvider requires the @RankNTypes@ language pragma.
 --
 -- This type as a whole represents a function which accepts a 'Dispatcher' and returns an 'IO';
--- the dispatcher itself accepts data of ANY 'Typeable' type and emits it as an event (see "Rasa.Internal.Events").
+-- the dispatcher itself accepts data of ANY 'Typeable' type and emits it as an event.
 --
 -- When you call 'asyncEventProvider' you pass it a function which accepts a @dispatch@ function as an argument
 -- and then calls it with various events within the resulting 'IO'.
 --
--- Note that asyncEventProvider calls forkIO internally, so there's no need to do that yourself.
+-- Note that this function calls forkIO internally, so there's no need to do that yourself.
 --
 -- Here's an example which fires a @Timer@ event every second.
 --

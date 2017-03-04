@@ -44,6 +44,7 @@ ext = lens getter setter
     setter s new =
       set (exts . at (typeRep (Proxy :: Proxy a)) . mapping coerce) (Just new) s
     coerce = iso (\(Ext x) -> unsafeCoerce x) Ext
+
 -- mExt
 --   :: forall a e.
 --     (Typeable a, Default a, HasExts e)

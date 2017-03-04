@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Eve.Internal.Run
   ( eve
   ) where
