@@ -1,12 +1,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Reflex.Internal.Run
-  ( reflex
+module Eve.Internal.Run
+  ( eve
   ) where
 
-import Reflex.Internal.App
-import Reflex.Internal.Listeners
-import Reflex.Internal.Events
+import Eve.Internal.App
+import Eve.Internal.Listeners
+import Eve.Internal.Events
 
 import Control.Monad.State
 import Data.Maybe
@@ -15,8 +15,8 @@ import Pipes
 import Pipes.Concurrent
 import qualified Pipes.Parse as PP
 
-reflex :: App () -> IO AppState
-reflex initialize = do
+eve :: App () -> IO AppState
+eve initialize = do
   (output :: Output (App ()), input :: Input (App ())) <- spawn unbounded
   execApp (AppState mempty output) $ do
     initialize

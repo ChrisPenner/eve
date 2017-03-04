@@ -1,4 +1,4 @@
-module Reflex.Internal.ExtensionsSpec where
+module Eve.Internal.EventsSpec where
 
 import Test.Hspec
 

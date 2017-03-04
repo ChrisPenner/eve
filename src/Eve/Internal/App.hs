@@ -5,7 +5,7 @@
 {-# language FlexibleContexts #-}
 {-# language UndecidableInstances #-}
 {-# language RankNTypes #-}
-module Reflex.Internal.App
+module Eve.Internal.App
   ( App
   , Action(..)
   , coerceAction
@@ -20,7 +20,7 @@ module Reflex.Internal.App
   , runAction
   ) where
 
-import Reflex.Internal.Extensions
+import Eve.Internal.Extensions
 
 import Control.Monad.State
 import Control.Lens

@@ -1,8 +1,8 @@
-name:                reflex
+name:                eve
 version:             0.1.0
 -- synopsis:
 -- description:
-homepage:            https://github.com/ChrisPenner/reflex#readme
+homepage:            https://github.com/ChrisPenner/eve#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Chris Penner
@@ -15,14 +15,14 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Reflex
-                     , Reflex.Internal.Async
-                     , Reflex.Internal.App
-                     , Reflex.Internal.AppF
-                     , Reflex.Internal.Events
-                     , Reflex.Internal.Extensions
-                     , Reflex.Internal.Listeners
-                     , Reflex.Internal.Run
+  exposed-modules:     Eve
+                     , Eve.Internal.Async
+                     , Eve.Internal.App
+                     , Eve.Internal.AppF
+                     , Eve.Internal.Events
+                     , Eve.Internal.Extensions
+                     , Eve.Internal.Listeners
+                     , Eve.Internal.Run
   build-depends:       base >= 4.7 && < 5
                      , mtl
                      , lens
@@ -34,19 +34,19 @@ library
                      , containers
   default-language:    Haskell2010
 
-test-suite reflex-test
+test-suite eve-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       Fixtures
-                     , ReflexSpec
-                     , Reflex.Internal.AsyncSpec
-                     , Reflex.Internal.ExtensionsSpec
-                     , Reflex.Internal.EventsSpec
-                     , Reflex.Internal.ListenersSpec
-                     , Reflex.Internal.RunSpec
+                     , EveSpec
+                     , Eve.Internal.AsyncSpec
+                     , Eve.Internal.ExtensionsSpec
+                     , Eve.Internal.EventsSpec
+                     , Eve.Internal.ListenersSpec
+                     , Eve.Internal.RunSpec
   build-depends:       base
-                     , reflex
+                     , eve
                      , hspec
                      , hspec-core
                      , lens
@@ -57,4 +57,4 @@ test-suite reflex-test
 
 source-repository head
   type:     git
-  location: https://github.com/ChrisPenner/reflex
+  location: https://github.com/ChrisPenner/eve

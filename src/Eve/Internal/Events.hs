@@ -1,4 +1,4 @@
-module Reflex.Internal.Events
+module Eve.Internal.Events
   ( Init(..)
   , AfterInit(..)
   , BeforeEvent(..)

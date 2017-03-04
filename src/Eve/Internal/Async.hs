@@ -3,12 +3,12 @@
 {-# language ExistentialQuantification #-}
 {-# language ScopedTypeVariables #-}
 
-module Reflex.Internal.Async
+module Eve.Internal.Async
   ( dispatchActionAsync
   , asyncActionProvider
   ) where
 
-import Reflex.Internal.App
+import Eve.Internal.App
 
 import Control.Monad
 import Control.Monad.State

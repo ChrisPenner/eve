@@ -6,8 +6,8 @@ module Fixtures
   , emptyExts
   ) where
 
-import Reflex.Internal.Extensions
-import Reflex.Internal.Listeners
+import Eve.Internal.Extensions
+import Eve.Internal.Listeners
 
 import Control.Lens
 import Data.Default

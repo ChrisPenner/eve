@@ -8,7 +8,7 @@
 {-# language UndecidableInstances #-}
 -- {-# language ExistentialQuantification #-}
 {-# language ScopedTypeVariables #-}
-module Reflex.Internal.AppF
+module Eve.Internal.AppF
   ( Action(..)
   , ActionF(..)
   , App
@@ -22,7 +22,7 @@ module Reflex.Internal.AppF
   , runAction
   ) where
 
-import Reflex.Internal.Extensions
+import Eve.Internal.Extensions
 import Data.Default
 
 import Control.Monad.State

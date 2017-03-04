@@ -1,13 +1,13 @@
 {-# language ScopedTypeVariables #-}
-module Reflex.Internal.ListenersSpec where
+module Eve.Internal.ListenersSpec where
 
 import Test.Hspec
 
 import Fixtures
-import Reflex.Internal.Run
-import Reflex.Internal.Listeners
-import Reflex.Internal.Extensions
-import Reflex.Internal.App
+import Eve.Internal.Run
+import Eve.Internal.Listeners
+import Eve.Internal.Extensions
+import Eve.Internal.App
 
 import Control.Monad.State
 import Control.Lens
@@ -50,12 +50,12 @@ spec = do
   describe "dispatchEvent/addListener" $
     it "Triggers Listeners" $ (testAction basicAction ^. store) `shouldBe` "new"
   describe "dispatchEventAsync" $ do
-    delayedExitState <- runIO $ reflex delayedExit
+    delayedExitState <- runIO $ eve delayedExit
     it "Triggers Listeners Eventually" $ (delayedExitState ^. store) `shouldBe` "new"
   describe "removeListener" $
     it "Removes Listeners" $ (testAction removeListenersTest ^. store) `shouldBe` "default"
   describe "asyncEventProvider" $ do
-    asyncEventsResult <- runIO $ reflex asyncEventsTest
+    asyncEventsResult <- runIO $ eve asyncEventsTest
     it "Provides events eventually" $ (asyncEventsResult ^. store) `shouldBe` "new"
-    multiAsyncEventsResult <- runIO $ reflex multiAsyncEventsTest
+    multiAsyncEventsResult <- runIO $ eve multiAsyncEventsTest
     it "Can provide different event types" $ (multiAsyncEventsResult ^. store) `shouldBe` "new"

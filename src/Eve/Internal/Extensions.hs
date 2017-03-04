@@ -1,7 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Reflex.Internal.Extensions
+module Eve.Internal.Extensions
   ( Exts
   , HasExts(..)
   , HasEvents

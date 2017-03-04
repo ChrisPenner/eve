@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Reflex.Internal.Listeners
+module Eve.Internal.Listeners
   ( HasEvents
   , dispatchEvent
   , dispatchEvent_
@@ -26,10 +26,10 @@ module Reflex.Internal.Listeners
   , ListenerId
   ) where
 
-import Reflex.Internal.Extensions
-import Reflex.Internal.Async
-import Reflex.Internal.App
-import Reflex.Internal.Events
+import Eve.Internal.Extensions
+import Eve.Internal.Async
+import Eve.Internal.App
+import Eve.Internal.Events
 
 import Control.Monad.State
 import Control.Lens

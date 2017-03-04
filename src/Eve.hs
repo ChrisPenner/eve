@@ -1,5 +1,5 @@
-module Reflex
-  ( reflex
+module Eve
+  ( eve
 
   , App
   , Action
@@ -38,9 +38,9 @@ module Reflex
   , exit
   ) where
 
-import Reflex.Internal.Run
--- import Reflex.Internal.App
-import Reflex.Internal.AppF
-import Reflex.Internal.Listeners
-import Reflex.Internal.Async
-import Reflex.Internal.Extensions
+import Eve.Internal.Run
+-- import Eve.Internal.App
+import Eve.Internal.AppF
+import Eve.Internal.Listeners
+import Eve.Internal.Async
+import Eve.Internal.Extensions
