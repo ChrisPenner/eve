@@ -15,13 +15,14 @@ import qualified Pipes.Parse as PP
 
 eve :: App () -> IO AppState
 eve initialize = do
-  (output :: Output (App ()), input :: Input (App ())) <- spawn unbounded
+  (output, input) <- spawn unbounded
   execApp (AppState mempty output) $ do
     initialize
     dispatchEvent_ Init
     dispatchEvent_ AfterInit
     eventLoop $ fromInput input
     dispatchEvent_ Exit
+    get
 
 -- | This is the main event loop, it runs recursively forever until something
 -- sets the exit status. It runs the pre-event listeners, then checks if any

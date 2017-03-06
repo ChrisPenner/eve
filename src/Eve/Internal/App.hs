@@ -25,7 +25,7 @@ import Eve.Internal.Extensions
 import Data.Default
 
 import Control.Monad.State
-import Control.Monad.Free
+import Control.Monad.Trans.Free
 import Control.Lens
 
 import Pipes.Concurrent
@@ -36,16 +36,14 @@ data AppState = AppState
   , _asyncQueue :: Output (App ())
   }
 
-data ActionF zoomed next =
-    LiftAction (Action AppState next)
-    | LiftIO (IO next)
-    | StateAction (StateT zoomed IO next)
-    deriving Functor
+
+newtype ActionF next =
+  LiftAction (StateT AppState IO next)
+  deriving (Functor, Applicative)
 
 newtype Action zoomed a = Action
-  { getAction :: Free (ActionF zoomed) a
-  } deriving (Functor, Applicative, Monad)
-
+  { getAction :: FreeT ActionF (StateT zoomed IO) a
+  } deriving (Functor, Applicative, Monad, MonadIO, MonadState zoomed, MonadFree ActionF)
 makeLenses ''AppState
 
 instance HasExts AppState where
@@ -53,37 +51,26 @@ instance HasExts AppState where
 
 instance HasEvents AppState where
 
-liftActionF :: ActionF zoomed next -> Action zoomed next
-liftActionF = Action . liftF
 
-instance MonadState zoomed (Action zoomed) where
-  state = liftActionF . StateAction . state
+unLift :: FreeT ActionF (StateT AppState IO) a -> StateT AppState IO a
+unLift m = do
+  step <- runFreeT m
+  case step of
+    Pure a -> return a
+    Free (LiftAction next) -> next >>= unLift
 
 liftAction :: Action AppState a -> Action zoomed a
-liftAction = liftActionF . LiftAction
+liftAction = liftF .  LiftAction . unLift . getAction
 
-execApp :: Action AppState a -> StateT AppState IO a
-execApp (Action actionF) = foldFree toState actionF
-  where
-    toState (LiftAction act) = execApp act
-    toState (LiftIO io) = liftIO io
-    toState (StateAction st) = st
+execApp :: AppState -> Action AppState a -> IO a
+execApp appState = flip evalStateT appState . unLift . getAction
 
-type instance Zoomed (Action s) = Zoomed (StateT s IO)
+type instance Zoomed (Action s) = Zoomed (FreeT ActionF (StateT s IO))
 instance Zoom (Action s) (Action t) s t where
-  zoom l (Action actionF) = Action $ hoistFree (zoomActionF l) actionF
-    where
-      zoomActionF _ (LiftAction act) = LiftAction act
-      zoomActionF _ (LiftIO io) = LiftIO io
-      zoomActionF lns (StateAction act) = StateAction $ zoom lns act
+  zoom l (Action action) = Action $ zoom l action
 
--- runAction :: Lens' base zoomed -> Action zoomed a -> Action base a
--- runAction l (Action actionF) = Action $ hoistFree (zoomActionF l) actionF
---   where
---     zoomActionF :: Lens' base zoomed -> ActionF zoomed a -> ActionF base a
---     zoomActionF _ (LiftAction la) = LiftAction la
---     zoomActionF _ (LiftIO io) = LiftIO io
---     zoomActionF lns (StateAction act) = StateAction $ zoom lns act
+runAction :: Zoom m n s t => LensLike' (Zoomed m c) t s -> m c -> n c
+runAction = zoom
 
 newtype Exiting =
   Exiting Bool
