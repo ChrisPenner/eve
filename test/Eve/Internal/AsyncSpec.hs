@@ -6,20 +6,19 @@ import Fixtures
 import Control.Lens
 import Eve
 
-asyncActionsTest :: App ()
+asyncActionsTest :: AppT TestState IO ()
 asyncActionsTest = do
-  addListener (const exit :: CustomEvent -> App ())
+  addListener (const exit :: CustomEvent -> AppT TestState IO ())
   asyncActionProvider (\d -> d exit)
   store .= "new"
 
 spec :: Spec
 spec = do
   describe "asyncActionProvider" $ do
-    asyncState <- runIO $ eve (asyncActionProvider (\d -> d (store .= "new" >> exit)))
+    asyncState <- ioTest (asyncActionProvider (\d -> d (store .= "new" >> exit)))
     it "Eventually Runs Provided Actions" $
       (asyncState ^. store) `shouldBe` "new"
   describe "dispatchActionAsync" $ do
-    asyncState <- runIO $ eve (asyncActionProvider (\d -> d (store .= "new" >> exit)))
-    asyncActionsResult <- runIO $ eve asyncActionsTest
+    asyncActionsResult <- ioTest asyncActionsTest
     it "Eventually Runs Provided Actions" $
       (asyncActionsResult ^. store) `shouldBe` "new"

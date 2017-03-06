@@ -9,50 +9,49 @@ import Eve
 import Control.Monad.State
 import Control.Lens
 
-testAction :: State TestState () -> TestState
-testAction = flip execState emptyStates
-
-basicAction :: State TestState ()
+basicAction :: AppT TestState Identity String
 basicAction = do
-  addListener (const (store .= "new") :: CustomEvent -> State TestState ())
+  addListener (const (store .= "new") :: CustomEvent -> AppT TestState Identity ())
   dispatchEvent_ CustomEvent
+  use store
 
-delayedExit :: App ()
+delayedExit :: AppT TestState IO ()
 delayedExit = do
-  addListener (const exit :: CustomEvent -> App ())
+  addListener (const exit :: CustomEvent -> AppT TestState IO ())
   dispatchEventAsync (return CustomEvent)
   store .= "new"
 
-removeListenersTest :: State TestState ()
+removeListenersTest :: AppT TestState Identity String
 removeListenersTest = do
-  listId <- addListener (const (store .= "new") :: CustomEvent -> State TestState ())
+  listId <- addListener (const (store .= "new") :: CustomEvent -> AppT TestState Identity ())
   removeListener listId
   dispatchEvent_ CustomEvent
+  use store
 
-asyncEventsTest :: App ()
+asyncEventsTest :: AppT TestState IO ()
 asyncEventsTest = do
-  addListener (const exit :: CustomEvent -> App ())
+  addListener (const exit :: CustomEvent -> AppT TestState IO ())
   asyncEventProvider (\d -> d CustomEvent)
   store .= "new"
 
 data OtherEvent = OtherEvent
-multiAsyncEventsTest :: App ()
+multiAsyncEventsTest :: AppT TestState IO ()
 multiAsyncEventsTest = do
-  addListener (const exit :: CustomEvent -> App ())
-  addListener (const (store .= "new") :: OtherEvent -> App ())
+  addListener (const exit :: CustomEvent -> AppT TestState IO ())
+  addListener (const (store .= "new") :: OtherEvent -> AppT TestState IO ())
   asyncEventProvider (\d -> d CustomEvent >> d OtherEvent)
 
 spec :: Spec
 spec = do
   describe "dispatchEvent/addListener" $
-    it "Triggers Listeners" $ (testAction basicAction ^. store) `shouldBe` "new"
+    it "Triggers Listeners" $ fst (noIOTest basicAction) `shouldBe` "new"
   describe "dispatchEventAsync" $ do
-    delayedExitState <- runIO $ eve delayedExit
+    delayedExitState <- ioTest delayedExit
     it "Triggers Listeners Eventually" $ (delayedExitState ^. store) `shouldBe` "new"
   describe "removeListener" $
-    it "Removes Listeners" $ (testAction removeListenersTest ^. store) `shouldBe` "default"
+    it "Removes Listeners" $ fst (noIOTest removeListenersTest) `shouldBe` "default"
   describe "asyncEventProvider" $ do
-    asyncEventsResult <- runIO $ eve asyncEventsTest
+    asyncEventsResult <- ioTest asyncEventsTest
     it "Provides events eventually" $ (asyncEventsResult ^. store) `shouldBe` "new"
-    multiAsyncEventsResult <- runIO $ eve multiAsyncEventsTest
+    multiAsyncEventsResult <- ioTest multiAsyncEventsTest
     it "Can provide different event types" $ (multiAsyncEventsResult ^. store) `shouldBe` "new"

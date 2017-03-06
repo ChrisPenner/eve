@@ -3,6 +3,8 @@ module Eve
 
   , App
   , Action
+  , AppT
+  , ActionT
   , liftAction
 
   -- * Events
@@ -84,4 +86,5 @@ import Eve.Internal.Run
 import Eve.Internal.Actions
 import Eve.Internal.Listeners
 import Eve.Internal.Async
+import Eve.Internal.AppState
 import Eve.Internal.States

@@ -47,28 +47,28 @@ import qualified Data.Map as M
 -- Though arbitrary actions may be performed in the configuration block;
 -- it's recommended to embed such actions in the onInit event listener
 -- so that all event listeners are registered before any dispatches occur.
-onInit :: App result -> App ()
-onInit action = void $ addListener (const (void action) :: Init -> App ())
+onInit :: forall base zoomed m result. (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m result -> ActionT base zoomed m ()
+onInit action = void $ addListener (const (void action) :: Init -> ActionT base zoomed m ())
 
-afterInit :: App a -> App ()
-afterInit action = void $ addListener (const (void action) :: AfterInit -> App ())
+afterInit :: forall base zoomed m a. (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ()
+afterInit action = void $ addListener (const (void action) :: AfterInit -> ActionT base zoomed m ())
 
 -- | Registers an action to be performed BEFORE each event phase.
-beforeEvent :: App a -> App ListenerId
-beforeEvent action = addListener (const (void action) :: BeforeEvent -> App ())
+beforeEvent :: forall base zoomed m a. (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ListenerId
+beforeEvent action = addListener (const (void action) :: BeforeEvent -> ActionT base zoomed m ())
 
-beforeEvent_ :: App a -> App ()
+beforeEvent_ :: (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ()
 beforeEvent_ = void . beforeEvent
 
 -- | Registers an action to be performed BEFORE each event phase.
-afterEvent :: App a -> App ListenerId
-afterEvent action = addListener (const (void action) :: AfterEvent -> App ())
+afterEvent :: forall base zoomed m a. (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ListenerId
+afterEvent action = addListener (const (void action) :: AfterEvent -> ActionT base zoomed m ())
 
-afterEvent_ :: App a -> App ()
+afterEvent_ :: (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ()
 afterEvent_ = void . afterEvent
 
-onExit :: App a -> App ()
-onExit action = void $ addListener (const $ void action :: Exit -> App ())
+onExit :: forall base zoomed m a. (HasEvents zoomed, Typeable m, Typeable base, Monad m) => ActionT base zoomed m a -> ActionT base zoomed m ()
+onExit action = void $ addListener (const $ void action :: Exit -> ActionT base zoomed m ())
 
 dispatchEvent
   :: forall result eventType m s.
@@ -148,8 +148,11 @@ removeListener listenerId@(ListenerId _ eventType) = localListeners %= remover
 -- registered for the resulting event will still be run syncronously, only the
 -- code which generates the event is asynchronous.
 dispatchEventAsync
-  :: (Typeable event)
-  => IO event -> App ()
+  :: (Typeable event
+     ,MonadIO m
+     ,Typeable m
+     ,HasEvents base
+     ) => IO event -> ActionT base zoomed m ()
 dispatchEventAsync ioEvent = dispatchActionAsync $ dispatchEvent <$> ioEvent
 
 -- | A wrapper around event listeners so they can be stored in 'Listeners'.
@@ -213,7 +216,7 @@ getListener (Listener _ _ x) = cast x
 type Dispatcher = forall event. Typeable event =>
                                 event -> IO ()
 
--- | This allows long-running IO processes to provide Events to the App asyncronously.
+-- | This allows long-running IO processes to provide Events to the ActionT base zoomed m asyncronously.
 --
 -- Don't let the type signature confuse you; it's much simpler than it seems.
 --
@@ -239,9 +242,9 @@ type Dispatcher = forall event. Typeable event =>
 -- > myAction :: Action s ()
 -- > myAction = onInit $ asyncEventProvider myTimer
 asyncEventProvider
-  :: (Dispatcher -> IO ()) -> App ()
+  :: (HasEvents base, MonadIO m, Typeable m) => (Dispatcher -> IO ()) -> ActionT base zoomed m ()
 asyncEventProvider asyncEventProv = asyncActionProvider $ eventsToActions asyncEventProv
   where
-    eventsToActions :: (Dispatcher -> IO ()) -> (App () -> IO ()) -> IO ()
+    eventsToActions :: (Monad m, HasEvents base, Typeable m) => (Dispatcher -> IO ()) -> (AppT base m () -> IO ()) -> IO ()
     eventsToActions aEventProv dispatcher =
       aEventProv (dispatcher . dispatchEvent)

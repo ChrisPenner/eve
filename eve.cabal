@@ -16,8 +16,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Eve
-                     , Eve.Internal.Testing
                      , Eve.Internal.Actions
+                     , Eve.Internal.AppState
                      , Eve.Internal.Async
                      , Eve.Internal.Events
                      , Eve.Internal.States

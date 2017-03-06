@@ -4,36 +4,38 @@ import Test.Hspec
 
 import Fixtures
 import Eve
-import Eve.Internal.Testing
 import Eve.Internal.Actions
 
 import Control.Lens
 import Control.Monad.State
 
-appendEx  :: Action String ()
+appendEx  :: Monad m => ActionT TestState String m ()
 appendEx  = modify (++ "!!")
+
+liftActionTest :: Monad m => ActionT TestState String m String
+liftActionTest = do
+  put "new"
+  liftAction $ runAction stateLens appendEx
+  get
 
 spec :: Spec
 spec = do
   describe "Exiting" $ do
-    exiting <- runIO . noEventTest $ exit >> isExiting
     it "Exits" $
-      exiting `shouldBe` True
+      let (didExit, _) = noIOTest (exit >> isExiting)
+       in didExit `shouldBe` True
 
   describe "runAction " $ do
-    runActionResult <- runIO . noEventTest $ runAction stateLens (put "new" >> appendEx) >> runAction stateLens get
     it "runs lifted actions to zoomed monad" $
-      runActionResult `shouldBe` "new!!"
+      let (runActionResult, _) = noIOTest $ runAction stateLens (put "new" >> appendEx) >> runAction stateLens get
+       in runActionResult `shouldBe` "new!!"
 
-    traversalResult <- runIO . noEventTest $ runAction stateLens (put $ Just "new") >> runAction (stateLens._Just) (appendEx >> get)
     it "runs over traversals" $
-      traversalResult `shouldBe` "new!!"
+      let (traversalResult, _) = noIOTest $ runAction stateLens (put $ Just "new") >> runAction (stateLens._Just) (appendEx >> get)
+       in traversalResult `shouldBe` "new!!"
 
   describe "liftAction" $ do
-    liftActionResult <- runIO . noEventTest . runAction stateLens $ do
-      put "new" 
-      liftAction $ runAction stateLens appendEx
-      get
     it "runs lifted actions to zoomed monad" $
-      liftActionResult `shouldBe` "new!!"
+      let (liftActionResult, _) = noIOTest (runAction stateLens liftActionTest :: AppT TestState Identity String)
+       in liftActionResult `shouldBe` "new!!"
 
