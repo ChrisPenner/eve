@@ -17,7 +17,7 @@ Getting started
 \^ That guide will bring you through the process of making your first app!
 
 If you have any issues (and I'm sure there'll be a few; it's a new project!)
-please report them [here](https://github.com/ChrisPenner/rasa/issues).
+please report them [here](https://github.com/ChrisPenner/eve/issues).
 
 Core Principles
 ---------------

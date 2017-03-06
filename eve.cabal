@@ -1,7 +1,7 @@
 name:                eve
 version:             0.1.0
--- synopsis:
--- description:
+synopsis: An extensible event framework
+description: An extensible event-driven application framework in haskell for building embarassingly modular software.
 homepage:            https://github.com/ChrisPenner/eve#readme
 license:             BSD3
 license-file:        LICENSE
