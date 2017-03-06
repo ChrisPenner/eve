@@ -8,7 +8,7 @@ module Eve.Internal.Async
   , asyncActionProvider
   ) where
 
-import Eve.Internal.App
+import Eve.Internal.Actions
 
 import Control.Monad
 import Control.Monad.State

@@ -4,10 +4,7 @@ import Test.Hspec
 
 import Fixtures
 import Control.Lens
-import Eve.Internal.Run
-import Eve.Internal.Listeners
-import Eve.Internal.App
-import Eve.Internal.Async
+import Eve
 
 asyncActionsTest :: App ()
 asyncActionsTest = do

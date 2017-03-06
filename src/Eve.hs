@@ -34,12 +34,11 @@ module Eve
   , ext
 
   , runAction
-  , AppState(..)
   , exit
   ) where
 
 import Eve.Internal.Run
-import Eve.Internal.App
+import Eve.Internal.Actions
 import Eve.Internal.Listeners
 import Eve.Internal.Async
 import Eve.Internal.Extensions

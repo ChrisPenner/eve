@@ -2,7 +2,7 @@ module Eve.Internal.Run
   ( eve
   ) where
 
-import Eve.Internal.App
+import Eve.Internal.Actions
 import Eve.Internal.Listeners
 import Eve.Internal.Events
 

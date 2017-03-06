@@ -7,18 +7,21 @@
 {-# language TypeFamilies #-}
 {-# language UndecidableInstances #-}
 {-# language ScopedTypeVariables #-}
-module Eve.Internal.App
+module Eve.Internal.Actions
   ( Action(..)
   , ActionF(..)
   , App
+  , execApp
+
   , AppState(..)
+  , asyncQueue
+
+  , liftAction
+  , runAction
+
   , exit
   , isExiting
   , Exiting(..)
-  , asyncQueue
-  , liftAction
-  , execApp
-  , runAction
   ) where
 
 import Eve.Internal.Extensions
@@ -36,7 +39,6 @@ data AppState = AppState
   , _asyncQueue :: Output (App ())
   }
 
-
 newtype ActionF next =
   LiftAction (StateT AppState IO next)
   deriving (Functor, Applicative)
@@ -50,7 +52,6 @@ instance HasExts AppState where
   exts = baseExts
 
 instance HasEvents AppState where
-
 
 unLift :: FreeT ActionF (StateT AppState IO) a -> StateT AppState IO a
 unLift m = do

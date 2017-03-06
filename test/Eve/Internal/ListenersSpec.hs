@@ -4,10 +4,7 @@ module Eve.Internal.ListenersSpec where
 import Test.Hspec
 
 import Fixtures
-import Eve.Internal.Run
-import Eve.Internal.Listeners
-import Eve.Internal.Extensions
-import Eve.Internal.App
+import Eve
 
 import Control.Monad.State
 import Control.Lens

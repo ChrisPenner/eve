@@ -28,7 +28,7 @@ module Eve.Internal.Listeners
 
 import Eve.Internal.Extensions
 import Eve.Internal.Async
-import Eve.Internal.App
+import Eve.Internal.Actions
 import Eve.Internal.Events
 
 import Control.Monad.State

@@ -16,8 +16,9 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Eve
+                     , Eve.Internal.Testing
+                     , Eve.Internal.Actions
                      , Eve.Internal.Async
-                     , Eve.Internal.App
                      , Eve.Internal.Events
                      , Eve.Internal.Extensions
                      , Eve.Internal.Listeners
@@ -40,6 +41,7 @@ test-suite eve-test
   other-modules:       Fixtures
                      , EveSpec
                      , Eve.Internal.AsyncSpec
+                     , Eve.Internal.ActionsSpec
                      , Eve.Internal.ExtensionsSpec
                      , Eve.Internal.EventsSpec
                      , Eve.Internal.ListenersSpec
