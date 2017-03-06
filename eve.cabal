@@ -1,5 +1,5 @@
 name:                eve
-version:             0.1.0
+version:             0.1.1
 synopsis: An extensible event framework
 description: An extensible event-driven application framework in haskell for building embarassingly modular software.
 homepage:            https://github.com/ChrisPenner/eve#readme
@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Eve
+                     , Eve.Testing
                      , Eve.Internal.Actions
                      , Eve.Internal.AppState
                      , Eve.Internal.Async

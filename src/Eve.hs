@@ -1,11 +1,13 @@
 module Eve
   ( eve
+  , eveT
 
   , App
   , Action
   , AppT
   , ActionT
   , liftAction
+  , AppState
 
   -- * Events
   , dispatchEvent

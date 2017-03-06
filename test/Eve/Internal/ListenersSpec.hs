@@ -9,36 +9,36 @@ import Eve
 import Control.Monad.State
 import Control.Lens
 
-basicAction :: AppT TestState Identity String
+basicAction :: AppT AppState Identity String
 basicAction = do
-  addListener (const (store .= "new") :: CustomEvent -> AppT TestState Identity ())
+  addListener (const (store .= "new") :: CustomEvent -> AppT AppState Identity ())
   dispatchEvent_ CustomEvent
   use store
 
-delayedExit :: AppT TestState IO ()
+delayedExit :: App ()
 delayedExit = do
-  addListener (const exit :: CustomEvent -> AppT TestState IO ())
+  addListener (const exit :: CustomEvent -> App ())
   dispatchEventAsync (return CustomEvent)
   store .= "new"
 
-removeListenersTest :: AppT TestState Identity String
+removeListenersTest :: AppT AppState Identity String
 removeListenersTest = do
-  listId <- addListener (const (store .= "new") :: CustomEvent -> AppT TestState Identity ())
+  listId <- addListener (const (store .= "new") :: CustomEvent -> AppT AppState Identity ())
   removeListener listId
   dispatchEvent_ CustomEvent
   use store
 
-asyncEventsTest :: AppT TestState IO ()
+asyncEventsTest :: App ()
 asyncEventsTest = do
-  addListener (const exit :: CustomEvent -> AppT TestState IO ())
+  addListener (const exit :: CustomEvent -> App ())
   asyncEventProvider (\d -> d CustomEvent)
   store .= "new"
 
 data OtherEvent = OtherEvent
-multiAsyncEventsTest :: AppT TestState IO ()
+multiAsyncEventsTest :: App ()
 multiAsyncEventsTest = do
-  addListener (const exit :: CustomEvent -> AppT TestState IO ())
-  addListener (const (store .= "new") :: OtherEvent -> AppT TestState IO ())
+  addListener (const exit :: CustomEvent -> App ())
+  addListener (const (store .= "new") :: OtherEvent -> App ())
   asyncEventProvider (\d -> d CustomEvent >> d OtherEvent)
 
 spec :: Spec

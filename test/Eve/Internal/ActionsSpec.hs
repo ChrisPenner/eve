@@ -9,10 +9,10 @@ import Eve.Internal.Actions
 import Control.Lens
 import Control.Monad.State
 
-appendEx  :: Monad m => ActionT TestState String m ()
+appendEx  :: Monad m => ActionT AppState String m ()
 appendEx  = modify (++ "!!")
 
-liftActionTest :: Monad m => ActionT TestState String m String
+liftActionTest :: Monad m => ActionT AppState String m String
 liftActionTest = do
   put "new"
   liftAction $ runAction stateLens appendEx
@@ -36,6 +36,6 @@ spec = do
 
   describe "liftAction" $ do
     it "runs lifted actions to zoomed monad" $
-      let (liftActionResult, _) = noIOTest (runAction stateLens liftActionTest :: AppT TestState Identity String)
+      let (liftActionResult, _) = noIOTest (runAction stateLens liftActionTest :: AppT AppState Identity String)
        in liftActionResult `shouldBe` "new!!"
 

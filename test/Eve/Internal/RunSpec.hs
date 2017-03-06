@@ -7,7 +7,7 @@ import Eve
 import Eve.Internal.Actions
 import Control.Lens
 
-exiter :: (AppT TestState IO () -> IO ()) -> IO ()
+exiter :: (App () -> IO ()) -> IO ()
 exiter dispatch = dispatch exit
 
 spec :: Spec

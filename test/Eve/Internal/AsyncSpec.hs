@@ -6,9 +6,9 @@ import Fixtures
 import Control.Lens
 import Eve
 
-asyncActionsTest :: AppT TestState IO ()
+asyncActionsTest :: App ()
 asyncActionsTest = do
-  addListener (const exit :: CustomEvent -> AppT TestState IO ())
+  addListener (const exit :: CustomEvent -> App ())
   asyncActionProvider (\d -> d exit)
   store .= "new"
 
