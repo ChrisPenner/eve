@@ -9,12 +9,12 @@ import Eve
 import Control.Monad.State
 import Control.Lens
 
-testAction :: State ExtState () -> ExtState
-testAction = flip execState emptyExts
+testAction :: State TestState () -> TestState
+testAction = flip execState emptyStates
 
-basicAction :: State ExtState ()
+basicAction :: State TestState ()
 basicAction = do
-  addListener (const (store .= "new") :: CustomEvent -> State ExtState ())
+  addListener (const (store .= "new") :: CustomEvent -> State TestState ())
   dispatchEvent_ CustomEvent
 
 delayedExit :: App ()
@@ -23,9 +23,9 @@ delayedExit = do
   dispatchEventAsync (return CustomEvent)
   store .= "new"
 
-removeListenersTest :: State ExtState ()
+removeListenersTest :: State TestState ()
 removeListenersTest = do
-  listId <- addListener (const (store .= "new") :: CustomEvent -> State ExtState ())
+  listId <- addListener (const (store .= "new") :: CustomEvent -> State TestState ())
   removeListener listId
   dispatchEvent_ CustomEvent
 

@@ -5,6 +5,7 @@ import Test.Hspec
 import Fixtures
 import Eve
 import Eve.Internal.Testing
+import Eve.Internal.Actions
 import Control.Lens
 
 exiter :: (App () -> IO ()) -> IO ()

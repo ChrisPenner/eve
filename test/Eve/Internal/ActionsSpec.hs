@@ -21,18 +21,18 @@ spec = do
       exiting `shouldBe` True
 
   describe "runAction " $ do
-    runActionResult <- runIO . noEventTest $ runAction ext (put "new" >> appendEx) >> runAction ext get
+    runActionResult <- runIO . noEventTest $ runAction stateLens (put "new" >> appendEx) >> runAction stateLens get
     it "runs lifted actions to zoomed monad" $
       runActionResult `shouldBe` "new!!"
 
-    traversalResult <- runIO . noEventTest $ runAction ext (put $ Just "new") >> runAction (ext._Just) (appendEx >> get)
+    traversalResult <- runIO . noEventTest $ runAction stateLens (put $ Just "new") >> runAction (stateLens._Just) (appendEx >> get)
     it "runs over traversals" $
       traversalResult `shouldBe` "new!!"
 
   describe "liftAction" $ do
-    liftActionResult <- runIO . noEventTest . runAction ext $ do
+    liftActionResult <- runIO . noEventTest . runAction stateLens $ do
       put "new" 
-      liftAction $ runAction ext appendEx
+      liftAction $ runAction stateLens appendEx
       get
     it "runs lifted actions to zoomed monad" $
       liftActionResult `shouldBe` "new!!"

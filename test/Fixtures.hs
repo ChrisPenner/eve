@@ -1,37 +1,36 @@
 {-# language TemplateHaskell #-}
 module Fixtures
-  ( ExtState(..)
+  ( TestState(..)
   , store
   , CustomEvent(..)
-  , emptyExts
+  , emptyStates
   ) where
 
-import Eve.Internal.Extensions
+import Eve.Internal.States
 import Eve.Internal.Listeners
 
 import Control.Lens
 import Data.Default
 
-data ExtState = ExtState
-  { _testExts :: Exts
+data TestState = TestState
+  { _testStates :: States
   }
+makeLenses ''TestState
 
-makeLenses ''ExtState
+instance HasStates TestState where
+  states = testStates
 
-instance HasExts ExtState where
-  exts = testExts
+instance HasEvents TestState
 
-instance HasEvents ExtState
+emptyStates = TestState mempty
 
-emptyExts = ExtState mempty
-
-data Store = Store 
+data Store = Store
   {_payload :: String
   } deriving (Show, Eq)
 makeLenses ''Store
 
-store :: HasExts s => Lens' s String
-store = ext.payload
+store :: HasStates s => Lens' s String
+store = stateLens.payload
 
 instance Default Store where
   def = Store "default"
