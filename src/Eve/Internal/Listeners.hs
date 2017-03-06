@@ -24,9 +24,10 @@ module Eve.Internal.Listeners
 
   , Listener
   , ListenerId
+  , Dispatcher
   ) where
 
-import Eve.Internal.Extensions
+import Eve.Internal.States
 import Eve.Internal.Async
 import Eve.Internal.Actions
 import Eve.Internal.Events
@@ -155,7 +156,7 @@ dispatchEventAsync ioEvent = dispatchActionAsync $ dispatchEvent <$> ioEvent
 data Listener where
         Listener ::
             (MonadState s m, Typeable m, Typeable eventType, Typeable result,
-             Monoid result, HasExts s) =>
+             Monoid result, HasStates s) =>
             TypeRep -> ListenerId -> (eventType -> m result) -> Listener
 
 instance Show Listener where
@@ -175,7 +176,7 @@ instance Eq ListenerId where
 -- | A map of event types to a list of listeners for that event
 type Listeners = M.Map TypeRep [Listener]
 
--- | Store the listeners in extensions
+-- | Store the listeners in the state-map
 data LocalListeners =
   LocalListeners Int
                  Listeners
@@ -185,9 +186,9 @@ instance Default LocalListeners where
   def = LocalListeners 0 M.empty
 
 localListeners
-  :: HasExts s
+  :: HasStates s
   => Lens' s LocalListeners
-localListeners = ext
+localListeners = stateLens
 
 -- | This extracts all event listeners from a map of listeners which match the type of the provided event.
 matchingListeners

@@ -20,7 +20,7 @@ library
                      , Eve.Internal.Actions
                      , Eve.Internal.Async
                      , Eve.Internal.Events
-                     , Eve.Internal.Extensions
+                     , Eve.Internal.States
                      , Eve.Internal.Listeners
                      , Eve.Internal.Run
   build-depends:       base >= 4.7 && < 5
