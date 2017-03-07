@@ -27,8 +27,8 @@ instance Show StateWrapper where
 type States = Map TypeRep StateWrapper
 
 -- | Represents a state which can itself store more states.
+-- 'states' is a lens which points to a given state's 'States' map.
 class HasStates s  where
--- | This lens points to a given state's 'States' map.
   states :: Lens' s States
 
 -- | A typeclass to ensure people don't dispatch events to states which shouldn't

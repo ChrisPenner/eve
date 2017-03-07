@@ -1,34 +1,36 @@
 module Eve
-  ( eve
-  , eveT
+  (
+  -- * Running your App
+  eve
 
+  -- * Working with Actions
   , App
   , Action
   , AppT
   , ActionT
-  , liftAction
-  , AppState
+  , liftApp
+  , runAction
+  , exit
 
-  -- * Events
+  -- * Dispatching Events
   , dispatchEvent
   , dispatchEvent_
   , dispatchEventAsync
   , dispatchActionAsync
 
+  -- * Event Listeners
   , addListener
   , addListener_
   , removeListener
+  , Listener
+  , ListenerId
 
-  -- * Working with Async Events/Actions
+  -- * Asynchronous Helpers
   , asyncActionProvider
   , asyncEventProvider
   , Dispatcher
 
-  , Listener
-  , ListenerId
-
   -- * Built-in Event Listeners
-  , onInit
   , afterInit
   , beforeEvent
   , beforeEvent_
@@ -79,9 +81,7 @@ module Eve
   , States
   , HasEvents
   , stateLens
-
-  , runAction
-  , exit
+  , AppState
   ) where
 
 import Eve.Internal.Run

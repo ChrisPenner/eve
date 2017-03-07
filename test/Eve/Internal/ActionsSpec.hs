@@ -4,7 +4,7 @@ import Test.Hspec
 
 import Fixtures
 import Eve
-import Eve.Internal.Actions
+import Eve.Internal.AppState
 
 import Control.Lens
 import Control.Monad.State
@@ -12,10 +12,10 @@ import Control.Monad.State
 appendEx  :: Monad m => ActionT AppState String m ()
 appendEx  = modify (++ "!!")
 
-liftActionTest :: Monad m => ActionT AppState String m String
-liftActionTest = do
+liftAppTest :: Monad m => ActionT AppState String m String
+liftAppTest = do
   put "new"
-  liftAction $ runAction stateLens appendEx
+  liftApp $ runAction stateLens appendEx
   get
 
 spec :: Spec
@@ -34,8 +34,8 @@ spec = do
       let (traversalResult, _) = noIOTest $ runAction stateLens (put $ Just "new") >> runAction (stateLens._Just) (appendEx >> get)
        in traversalResult `shouldBe` "new!!"
 
-  describe "liftAction" $ do
+  describe "liftApp" $ do
     it "runs lifted actions to zoomed monad" $
-      let (liftActionResult, _) = noIOTest (runAction stateLens liftActionTest :: AppT AppState Identity String)
-       in liftActionResult `shouldBe` "new!!"
+      let (liftAppResult, _) = noIOTest (runAction stateLens liftAppTest :: AppT AppState Identity String)
+       in liftAppResult `shouldBe` "new!!"
 

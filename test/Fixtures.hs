@@ -33,4 +33,4 @@ instance Default Store where
 data CustomEvent = CustomEvent
 
 ioTest :: App () -> SpecM m AppState
-ioTest = runIO . eveT def
+ioTest = runIO . eve

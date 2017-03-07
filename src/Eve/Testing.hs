@@ -3,7 +3,6 @@ module Eve.Testing
   ) where
 
 import Eve.Internal.Actions
-import Eve.Internal.Run
 import Eve.Internal.AppState
 
 import Control.Monad.Identity
