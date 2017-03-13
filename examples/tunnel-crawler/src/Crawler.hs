@@ -18,6 +18,7 @@ import Data.List
 newtype KeyPress = KeyPress Char
 data Timer = Timer
 data Render = Render
+data GetRenderInfo = GetRenderInfo
 
 data GameState = GameState
   { _pos' :: Int
@@ -54,7 +55,7 @@ timer dispatch = forever $ do
 
 replaceAt :: Int -> Char -> String -> String
 replaceAt _ _ [] = []
-replaceAt 0 c (x:xs) = c:xs
+replaceAt 0 c (_:xs) = c:xs
 replaceAt n c (x:xs) = x:replaceAt (n-1) c xs
 
 base :: String
@@ -83,8 +84,14 @@ handleKeypress (KeyPress c) = do
   checkScore
   dispatchEvent_ Render
 
+addRenderInfo :: App String -> App ()
+addRenderInfo action = addListener_ $ (const (fmap (:[]) action) :: GetRenderInfo -> App [String])
+
+getRenderInfo :: App [String]
+getRenderInfo = dispatchEvent GetRenderInfo
+
 gameLoop :: IO ()
-gameLoop = eve $ do
+gameLoop = eve_ $ do
   liftIO $ do
     hSetBuffering stdin NoBuffering
     hSetBuffering stdout NoBuffering
