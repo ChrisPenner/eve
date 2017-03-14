@@ -17,7 +17,7 @@ import Eve.Internal.States
 import Control.Lens
 import Data.Default
 import Data.Typeable
-import Pipes.Concurrent
+import Control.Concurrent.Chan
 
 -- | A basic default state which underlies 'App' Contains only a map of 'States'.
 data AppState = AppState
@@ -34,7 +34,7 @@ instance HasStates AppState where
 instance HasEvents AppState where
 
 newtype AsyncQueue base m = AsyncQueue
-  { _asyncQueue' :: Maybe (Output (AppT base m ()))
+  { _asyncQueue' :: Maybe (Chan (AppT base m ()))
   } deriving Typeable
 makeLenses ''AsyncQueue
 
@@ -45,7 +45,7 @@ instance Default (AsyncQueue base m) where
   def = AsyncQueue Nothing
 
 -- | Accesses a queue for dispatching async actions.
-asyncQueue :: (HasStates s, Typeable m, Typeable base) => Lens' s (Maybe (Output (AppT base m ())))
+asyncQueue :: (HasStates s, Typeable m, Typeable base) => Lens' s (Maybe (Chan (AppT base m ())))
 asyncQueue = stateLens.asyncQueue'
 
 newtype Exiting =

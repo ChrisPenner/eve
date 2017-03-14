@@ -39,7 +39,7 @@ multiAsyncEventsTest :: App ()
 multiAsyncEventsTest = do
   addListener (const exit :: CustomEvent -> App ())
   addListener (const (store .= "new") :: OtherEvent -> App ())
-  asyncEventProvider (\d -> d CustomEvent >> d OtherEvent)
+  asyncEventProvider (\d -> d OtherEvent >> d CustomEvent)
 
 spec :: Spec
 spec = do
