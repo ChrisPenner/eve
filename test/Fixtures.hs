@@ -6,6 +6,7 @@ module Fixtures
   , ioTest
   , NestedStates
   , nestedString
+  , nestedStates
   ) where
 
 import Eve.Testing
@@ -22,7 +23,7 @@ import Test.Hspec.Core.Spec (SpecM)
 import Test.Hspec
 
 data NestedStates = NestedStates
-  { _nestedStates :: States
+  { _nestedStates' :: States
   , _nestedString :: String
   }
 makeLenses ''NestedStates
@@ -31,9 +32,12 @@ instance Default NestedStates where
   def = NestedStates mempty "default"
 
 instance HasStates NestedStates where
-  states = nestedStates
+  states = nestedStates'
 
 instance HasEvents NestedStates
+
+nestedStates :: HasStates s => Lens' s NestedStates
+nestedStates = stateLens
 
 data Store = Store
   {_payload :: String

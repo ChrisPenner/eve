@@ -34,10 +34,28 @@ asyncEventsTest = do
   asyncEventProvider (\d -> d CustomEvent)
   store .= "new"
 
-localEventsTest :: Action NestedStates ()
-localEventsTest = do
-  addLocalListener (const (nestedString .= "new") :: CustomEvent -> Action NestedStates ())
-  dispatchEvent CustomEvent
+localStateIsolationTest :: ActionT AppState NestedStates Identity String
+localStateIsolationTest = do
+  addLocalListener (const (nestedString .= "new") :: CustomEvent -> ActionT AppState NestedStates Identity ())
+  dispatchEvent_ CustomEvent
+  use nestedString
+
+globalStateIsolationTest :: AppT AppState Identity String
+globalStateIsolationTest = do
+  addListener (const (store .= "new") :: CustomEvent -> AppT AppState Identity ())
+  runAction nestedStates $ do
+    dispatchLocalEvent_ CustomEvent
+  use store
+
+listenerPassThroughTest :: AppT AppState Identity String
+listenerPassThroughTest = do
+  let nestedAction :: ActionT AppState NestedStates Identity ()
+      nestedAction = do
+        addListener (const (store .= "new") :: CustomEvent -> AppT AppState Identity ())
+        dispatchEvent CustomEvent
+  runAction nestedStates nestedAction
+  use store
+
 
 data OtherEvent = OtherEvent
 multiAsyncEventsTest :: App ()
@@ -51,6 +69,11 @@ spec = do
   describe "dispatchEvent/addListener" $
     it "Triggers Listeners" $ fst (noIOTest basicAction) `shouldBe` "new"
 
+  describe "local events" $ do
+    it "local state is isolated from global events" $ fst (noIOTest $ runAction stateLens localStateIsolationTest) `shouldBe` "default"
+    it "global state is isolated from local events" $ fst (noIOTest globalStateIsolationTest) `shouldBe` "default"
+    it "global event actions pass through from local state" $ fst (noIOTest listenerPassThroughTest) `shouldBe` "new"
+
   describe "dispatchEventAsync" $ do
     delayedExitState <- ioTest delayedExit
     it "Triggers Listeners Eventually" $ (delayedExitState ^. store) `shouldBe` "new"
@@ -63,6 +86,3 @@ spec = do
     it "Provides events eventually" $ (asyncEventsResult ^. store) `shouldBe` "new"
     multiAsyncEventsResult <- ioTest multiAsyncEventsTest
     it "Can provide different event types" $ (multiAsyncEventsResult ^. store) `shouldBe` "new"
-
---   describe "removeListener" $
---     it "Removes Listeners" $ fst (noIOTest removeListenersTest) `shouldBe` "default"
