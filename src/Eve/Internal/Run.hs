@@ -27,7 +27,7 @@ import Data.Typeable
 -- custom base monad which implements 'MonadIO'.
 --
 -- If you don't need this functionality; the easiest way to get started is to simply
--- cally it like so:
+-- call it like so:
 --
 -- > import Eve
 -- >
