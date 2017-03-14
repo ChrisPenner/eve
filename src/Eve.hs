@@ -2,6 +2,7 @@ module Eve
   (
   -- * Running your App
   eve
+  , eve_
 
   -- * Working with Actions
   , App
