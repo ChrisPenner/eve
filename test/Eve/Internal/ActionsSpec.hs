@@ -23,7 +23,7 @@ liftAppTest = do
 data SimpleState = SimpleState
   { _myInt :: Int
   , _myString :: String
-  } deriving (Eq, Show)
+  }
 makeLenses ''SimpleState
 
 instance Default SimpleState where

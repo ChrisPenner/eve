@@ -17,11 +17,8 @@ import Data.Default
 
 -- | A wrapper to allow storing types of states in the same place.
 data StateWrapper =
-  forall s. (Typeable s, Show s) =>
+  forall s. (Typeable s) =>
               StateWrapper s
-
-instance Show StateWrapper where
-  show (StateWrapper s) = show s
 
 -- | A map of state types to their current value.
 type States = Map TypeRep StateWrapper
@@ -46,7 +43,7 @@ class (Typeable s, HasStates s) =>
 -- It returns the default value ('def') if a state has not yet been set.
 stateLens
   :: forall a e.
-    (Show a, Typeable a, Default a, HasStates e)
+    (Typeable a, Default a, HasStates e)
   => Lens' e a
 stateLens = lens getter setter
   where

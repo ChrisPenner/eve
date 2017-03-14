@@ -38,9 +38,6 @@ newtype AsyncQueue base m = AsyncQueue
   } deriving Typeable
 makeLenses ''AsyncQueue
 
-instance Show (AsyncQueue base m) where
-  show _ = "Async Queue"
-
 instance Default (AsyncQueue base m) where
   def = AsyncQueue Nothing
 
@@ -50,7 +47,6 @@ asyncQueue = stateLens.asyncQueue'
 
 newtype Exiting =
   Exiting Bool
-  deriving (Show, Eq)
 
 instance Default Exiting where
   def = Exiting False

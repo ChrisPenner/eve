@@ -21,7 +21,7 @@ import Test.Hspec
 
 data Store = Store
   {_payload :: String
-  } deriving (Show, Eq)
+  }
 makeLenses ''Store
 
 store :: HasStates s => Lens' s String

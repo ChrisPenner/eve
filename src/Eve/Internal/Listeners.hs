@@ -187,16 +187,11 @@ data Listener where
              Monoid result, HasStates s) =>
             TypeRep -> ListenerId -> (eventType -> m result) -> Listener
 
-instance Show Listener where
-  show (Listener rep (ListenerId n _) _) =
-    "<Listener #" ++ show n ++ ", " ++ show rep ++ ">"
-
 -- | An opaque reverence to a specific registered event-listener.
 -- A ListenerId is used only to remove listeners later with 'removeListener'.
 data ListenerId =
   ListenerId Int
              TypeRep
-  deriving (Show)
 
 instance Eq ListenerId where
   ListenerId a _ == ListenerId b _ = a == b
@@ -208,7 +203,6 @@ type Listeners = M.Map TypeRep [Listener]
 data LocalListeners =
   LocalListeners Int
                  Listeners
-  deriving (Show)
 
 instance Default LocalListeners where
   def = LocalListeners 0 M.empty
