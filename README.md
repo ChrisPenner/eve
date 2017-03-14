@@ -34,7 +34,8 @@ user-interaction, file-changes, even network sockets! Anything you can think of
 really! Each time an event is fired, your app 'reacts' by running any
 associated listeners on the given event. 
 
-The functions you need to know are (with simplified types, see the real type on Hackage):
+The functions you need to know are (with simplified types, see the real type in
+the [hackage docs](https://hackage.haskell.org/package/eve/docs/Eve.html)):
 
 - `dispatchEvent :: forall eventType result m. (Monad m, Monoid result) => eventType -> m result`
 - `addListener :: forall eventType result m. (Monad m, Monoid result) (eventType -> m result) -> m ListenerId`
@@ -46,6 +47,40 @@ Typeable type and it will run the proper event listeners which were registered
 by `addListener`; those listeners can alter app state, or even dispatch more
 events! If the listeners return some (monoidal) value then the results from all
 listeners are combined with `mappend` and are returned. That's pretty much it!
+
+Here's a quick example for those who need to see some code:
+
+```haskell
+import Eve
+import Data.Monoid
+
+-- Define an event to listen for, in this case we don't even need any data alongside it.
+data ComputeScore = ComputeScore
+
+-- Define some computations which calculate some aspect of score.
+-- We accept an argument of 'ComputeScore' to define what this is a listener for
+scoreContributor1, scoreContributor2 :: ComputeScore -> App (Sum Int)
+scoreContributor1 _ = do
+  ... -- do some calculation over app state to determine one aspect of score
+  return (Sum score)
+
+scoreContributor2 _ = do
+  ... -- Calculate some other aspect of the score
+  return (Sum score)
+
+-- In eve's initialization block we register the listeners, we could add these listeners anywhere
+main :: IO ()
+main = eve_ $ do
+  ... -- other initialization (e.g. key listeners, etc.)
+  addListener_ scoreContributor1
+  addListener_ scoreContributor2
+
+  -- This dispatchers the triggering event and monoidally sums all the individual score components!
+computeTotalScore :: App (Sum Int)
+computeTotalScore = do
+  Sum score <- dispatchEvent ComputeScore
+  return score
+```
 
 ## State
 
@@ -111,8 +146,8 @@ instance HasStates MyState where
 Done! We added a new field which has the type `States` which is exported by Eve.
 Then we just took the **lens** created by `makeLenses` and used it in our instance.
 That's it! Now extensions can store their own state inside `Action MyState` by
-using the `stateLens`; check out the hackage docs on that for more info on how
-to do that!
+using the `stateLens`; check out the [hackage docs](https://hackage.haskell.org/package/eve/docs/Eve.html) 
+on that for more info on how to do it!
 
 Those are the basics, but you can do much more than that if you like!
 Eve also lets you add listeners and dispatch events on an Object specific basis!
