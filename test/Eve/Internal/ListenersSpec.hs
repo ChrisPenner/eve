@@ -34,6 +34,11 @@ asyncEventsTest = do
   asyncEventProvider (\d -> d CustomEvent)
   store .= "new"
 
+localEventsTest :: Action NestedStates ()
+localEventsTest = do
+  addLocalListener (const (nestedString .= "new") :: CustomEvent -> Action NestedStates ())
+  dispatchEvent CustomEvent
+
 data OtherEvent = OtherEvent
 multiAsyncEventsTest :: App ()
 multiAsyncEventsTest = do
@@ -45,13 +50,19 @@ spec :: Spec
 spec = do
   describe "dispatchEvent/addListener" $
     it "Triggers Listeners" $ fst (noIOTest basicAction) `shouldBe` "new"
+
   describe "dispatchEventAsync" $ do
     delayedExitState <- ioTest delayedExit
     it "Triggers Listeners Eventually" $ (delayedExitState ^. store) `shouldBe` "new"
+
   describe "removeListener" $
     it "Removes Listeners" $ fst (noIOTest removeListenersTest) `shouldBe` "default"
+
   describe "asyncEventProvider" $ do
     asyncEventsResult <- ioTest asyncEventsTest
     it "Provides events eventually" $ (asyncEventsResult ^. store) `shouldBe` "new"
     multiAsyncEventsResult <- ioTest multiAsyncEventsTest
     it "Can provide different event types" $ (multiAsyncEventsResult ^. store) `shouldBe` "new"
+
+--   describe "removeListener" $
+--     it "Removes Listeners" $ fst (noIOTest removeListenersTest) `shouldBe` "default"

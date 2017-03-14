@@ -16,13 +16,23 @@ module Eve
   -- * Dispatching Events
   , dispatchEvent
   , dispatchEvent_
+
+  , dispatchLocalEvent
+  , dispatchLocalEvent_
+
   , dispatchEventAsync
   , dispatchActionAsync
 
   -- * Event Listeners
   , addListener
   , addListener_
+
+  , addLocalListener
+  , addLocalListener_
+
   , removeListener
+  , removeLocalListener
+
   , Listener
   , ListenerId
 
