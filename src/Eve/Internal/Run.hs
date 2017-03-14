@@ -9,16 +9,12 @@ import Eve.Internal.Events
 import Eve.Internal.States()
 import Eve.Internal.AppState
 
+import Control.Concurrent.Chan
 import Control.Monad
 import Control.Monad.State
 import Control.Lens
 import Data.Default
-import Data.Maybe
 import Data.Typeable
-
-import Pipes
-import Pipes.Concurrent
-import qualified Pipes.Parse as PP
 
 -- | This runs your application. It accepts an initialization block (which
 -- is the same as any other 'App' or 'Action' block, which
@@ -44,12 +40,12 @@ import qualified Pipes.Parse as PP
 -- > startApp = eve_ initialize
 eve :: (MonadIO m, Typeable m) => AppT AppState m () -> m AppState
 eve initialize = do
-  (output, input) <- liftIO $ spawn unbounded
-  execApp (def & asyncQueue .~ Just output) $ do
+  chan <- liftIO newChan
+  execApp (def & asyncQueue .~ Just chan) $ do
     initialize
     dispatchEvent_ Init
     dispatchEvent_ AfterInit
-    eventLoop $ fromInput input
+    eventLoop chan
     dispatchEvent_ Exit
 
 -- | 'eve' with '()' as its return value.
@@ -59,11 +55,10 @@ eve_ = void . eve
 -- | This is the main event loop, it runs recursively forever until something
 -- sets the exit status. It runs the pre-event listeners, then checks if any
 -- async events have finished, then runs the post event listeners and repeats.
-eventLoop :: (MonadIO m, HasEvents base, Typeable m) => Producer (AppT base m ()) IO () -> AppT base m ()
-eventLoop producer = do
+eventLoop :: (MonadIO m, HasEvents base, Typeable m) => Chan (AppT base m ()) -> AppT base m ()
+eventLoop chan = do
   dispatchEvent_ BeforeEvent
-  (mAction, nextProducer) <- liftIO $ PP.runStateT PP.draw producer
-  fromMaybe (return ()) mAction
+  join . liftIO $ readChan chan
   dispatchEvent_ AfterEvent
   shouldExit <- isExiting
-  unless shouldExit $ eventLoop nextProducer
+  unless shouldExit $ eventLoop chan

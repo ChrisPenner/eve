@@ -1,5 +1,5 @@
 name:                eve
-version:             0.1.2
+version:             0.1.3
 synopsis: An extensible event framework
 description: An extensible event-driven application framework in haskell for building embarassingly modular software.
 homepage:            https://github.com/ChrisPenner/eve#readme
@@ -28,9 +28,6 @@ library
                      , mtl
                      , lens
                      , free
-                     , pipes
-                     , pipes-parse
-                     , pipes-concurrency
                      , data-default
                      , containers
   default-language:    Haskell2010
