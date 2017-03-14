@@ -21,11 +21,10 @@ updatePos :: Char -> Action GameState ()
 updatePos 'a' = modify dec
   where
     dec (GameState pos) = GameState $ pos - 1
-
 updatePos 'd' = modify inc
   where
     inc (GameState pos) = GameState $ pos + 1
-updatePos '_' = return ()
+updatePos _ = return ()
 
 handleKeypress :: KeyPress -> App ()
 handleKeypress (KeyPress c) = do
@@ -48,7 +47,7 @@ setup = do
     hSetBuffering stdout NoBuffering
     hSetEcho stdin False
   asyncEventProvider keypressProvider
-  addListener_ echo
+  addListener_ handleKeypress
 
 gameLoop :: IO ()
 gameLoop = eve_ setup

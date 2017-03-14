@@ -281,6 +281,30 @@ can wrap your type in a `Maybe` and use `Nothing` as your default, then
 initialize your state in the setup block when you have more information.
 
 Now let's use our keypress events to change our new player position state!
+You can go ahead and delete `echo` and we'll write a new keypress handler
+called (unoriginally) `handleKeypress`
 
+```haskell
 
+-- This action runs over a GameState,
+-- We'll see how to write this MUCH cleaner using
+-- 'lenses' soon.
+updatePos :: Char -> Action GameState ()
+updatePos 'a' = modify dec
+  where
+    dec (GameState pos) = GameState $ pos - 1
+updatePos 'd' = modify inc
+  where
+    inc (GameState pos) = GameState $ pos + 1
+updatePos _ = return ()
 
+handleKeypress :: KeyPress -> App ()
+handleKeypress (KeyPress c) = do
+  -- stateLens 
+  runAction stateLens $ updatePos c
+  GameState pos <- use stateLens
+  liftApp . liftIO $ print pos
+```
+
+Then we'll go ahead and remove the old `addListener_` call and replace it
+with: `addListener_ handleKeypress`. Here'
