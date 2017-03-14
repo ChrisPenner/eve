@@ -1,4 +1,4 @@
-module Eve.Internal.ExtensionsSpec where
+module Eve.Internal.StatesSpec where
 
 import Test.Hspec
 

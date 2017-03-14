@@ -136,8 +136,7 @@ There are some definite Pros and Cons to Eve's approach:
 
 ### Pros
 
--   Implementing most core functionality as extensions ensures a powerful and
-    elegant extension interface.
+-   Implementing most core functionality using the event system your app remains extensible.
 -   Flexibility & Adaptability; applications can be written in such a way that
     users can replace entire components with alternate versions.
 
@@ -145,7 +144,6 @@ There are some definite Pros and Cons to Eve's approach:
 
 -   Module cross-dependencies makes the community infrastructure more fragile,
 -   This architecture takes some getting used-to.
-
 
 Contributing
 ============

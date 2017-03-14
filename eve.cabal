@@ -43,7 +43,7 @@ test-suite eve-test
                      , EveSpec
                      , Eve.Internal.AsyncSpec
                      , Eve.Internal.ActionsSpec
-                     , Eve.Internal.ExtensionsSpec
+                     , Eve.Internal.StatesSpec
                      , Eve.Internal.EventsSpec
                      , Eve.Internal.ListenersSpec
                      , Eve.Internal.RunSpec
