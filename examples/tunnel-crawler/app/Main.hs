@@ -1,6 +1,6 @@
 module Main where
 
-import Crawler
+import Lib
 
 main :: IO ()
 main = gameLoop
