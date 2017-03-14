@@ -264,9 +264,23 @@ We'll take a simple approach in this case where all of our game state is stored
 in a single 'GameState' object.
 
 ```haskell
-data GameState = GameState
-  { _pos' :: Int
-  }
-makeLenses ''GameState
+import Data.Default
+data GameState = GameState Int
+
+instance Default GameState where
+  def = GameState 0
 ```
+
+As you can see our GameState is pretty simple, it consists of just a single int
+which we'll use to track our player's position in the tunnel. We've also added
+the `Data.Default` import and have defined an instance of `Default` for our
+GameState which works pretty much exactly how you'd expect. States which we
+store in Eve require a `Default` instance because of how they're accessed; if
+you're dealing with a state where it's tough to come up with a good default you
+can wrap your type in a `Maybe` and use `Nothing` as your default, then
+initialize your state in the setup block when you have more information.
+
+Now let's use our keypress events to change our new player position state!
+
+
 
