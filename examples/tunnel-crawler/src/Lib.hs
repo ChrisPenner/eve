@@ -1,44 +1,85 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Lib where
 
 import Eve
 import System.IO
+import System.Random
+import Control.Concurrent
 import Control.Lens
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans
 import Data.Default
+import Data.List
 
+data Timer = Timer
+data Render = Render
 data KeyPress = KeyPress Char
 
-data GameState = GameState Int
+data GameState = GameState
+  { _pos' :: Int
+  , _treasures' :: [Int]
+  }
+makeLenses ''GameState
 
 instance Default GameState where
-  def = GameState 0
+  def = GameState 0 []
 
+pos :: HasStates s => Lens' s Int
+pos = makeStateLens pos'
 
-updatePos :: Char -> Action GameState ()
-updatePos 'a' = modify dec
-  where
-    dec (GameState pos) = GameState $ pos - 1
-updatePos 'd' = modify inc
-  where
-    inc (GameState pos) = GameState $ pos + 1
-updatePos _ = return ()
+treasures :: HasStates s => Lens' s [Int]
+treasures = makeStateLens treasures'
 
 handleKeypress :: KeyPress -> App ()
 handleKeypress (KeyPress c) = do
-  runAction stateLens $ updatePos c
-  GameState pos <- use stateLens
-  liftApp . liftIO $ print pos
+  case c of
+    'a' -> pos -= 1
+    'd' -> pos += 1
+    _ -> return ()
+  collectTreasure
 
 keypressProvider :: Dispatcher -> IO ()
 keypressProvider dispatcher = forever $ do
   c <- getChar
   dispatcher (KeyPress c)
 
-echo :: KeyPress -> App ()
-echo (KeyPress c) = liftIO (print $ "You pressed: " ++ [c])
+-- A simple tunnel drawing
+tunnel :: String
+tunnel = replicate 20 '.'
+
+-- Replace the char at a position with a new char
+replaceAt :: Char -> Int -> String -> String
+replaceAt _ _ [] = []
+replaceAt c 0 (_:xs) = c:xs
+replaceAt c n (x:xs) = x:replaceAt c (n-1) xs
+
+render :: App ()
+render = do
+  liftIO $ putChar '\r'
+  n <- use pos
+  t <- use treasures
+  liftIO . putStr . replaceAt '$' n . addTreasures t $ tunnel
+    where
+      addTreasures t tunnel = foldr (replaceAt '%') tunnel t
+
+timer :: Dispatcher -> IO ()
+timer dispatch = forever $ do
+  threadDelay 3000000
+  dispatch Timer
+
+collectTreasure :: App ()
+collectTreasure = do
+  p <- use pos
+  t <- use treasures
+  when (p `elem` t) (treasures %= delete p)
+
+spawnTreasure :: App ()
+spawnTreasure = do
+  r <- liftIO $ randomRIO (1, 20)
+  treasures %= (r:)
+  dispatchEvent_ Render
 
 setup :: App ()
 setup = do
@@ -48,8 +89,10 @@ setup = do
     hSetEcho stdin False
   asyncEventProvider keypressProvider
   addListener_ handleKeypress
+  addListener_ (const render :: Render -> App ())
+  addListener_ (const spawnTreasure :: Timer -> App ())
+  afterEvent_ $ dispatchEvent_ Render
+  asyncEventProvider timer
 
 gameLoop :: IO ()
 gameLoop = eve_ setup
-
-
