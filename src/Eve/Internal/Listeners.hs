@@ -7,11 +7,18 @@ module Eve.Internal.Listeners
   ( HasEvents
   , dispatchEvent
   , dispatchEvent_
+  , dispatchLocalEvent
+  , dispatchLocalEvent_
   , dispatchEventAsync
 
   , addListener
   , addListener_
+  , addLocalListener
+  , addLocalListener_
+
   , removeListener
+  , removeLocalListener
+
   , asyncEventProvider
 
   , afterInit
@@ -42,26 +49,26 @@ import qualified Data.Map as M
 -- | Registers an action to be performed directly following the Initialization phase.
 --
 -- At this point any listeners in the initialization block have run, so you may 'dispatchEvent's here.
-afterInit :: forall base zoomed m a. (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ()
-afterInit action = void $ addListener (const (void action) :: AfterInit -> ActionT base zoomed m ())
+afterInit :: forall base m a. (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> AppT base m ()
+afterInit action = void $ addListener (const (void action) :: AfterInit -> AppT base m ())
 
 -- | Registers an action to be performed BEFORE each async event is processed phase.
-beforeEvent :: forall base zoomed m a. (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ListenerId
-beforeEvent action = addListener (const (void action) :: BeforeEvent -> ActionT base zoomed m ())
+beforeEvent :: forall base zoomed m a. (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> ActionT base zoomed m ListenerId
+beforeEvent action = addListener (const (void action) :: BeforeEvent -> AppT base m ())
 
-beforeEvent_ :: (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ()
+beforeEvent_ :: (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> ActionT base zoomed m ()
 beforeEvent_ = void . beforeEvent
 
 -- | Registers an action to be performed AFTER each event phase.
-afterEvent :: forall base zoomed m a. (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ListenerId
-afterEvent action = addListener (const (void action) :: AfterEvent -> ActionT base zoomed m ())
+afterEvent :: forall base zoomed m a. (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> ActionT base zoomed m ListenerId
+afterEvent action = addListener (const (void action) :: AfterEvent -> AppT base m ())
 
-afterEvent_ :: (Monad m, HasEvents zoomed, Typeable m, Typeable base) => ActionT base zoomed m a -> ActionT base zoomed m ()
+afterEvent_ :: (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> ActionT base zoomed m ()
 afterEvent_ = void . afterEvent
 
 -- | Registers an action to be run before shutdown. Any asynchronous combinators used in this block will NOT be run.
-onExit :: forall base zoomed m a. (HasEvents zoomed, Typeable m, Typeable base, Monad m) => ActionT base zoomed m a -> ActionT base zoomed m ()
-onExit action = void $ addListener (const $ void action :: Exit -> ActionT base zoomed m ())
+onExit :: forall base zoomed m a. (HasEvents base, Typeable m, Typeable base, Monad m) => AppT base m a -> ActionT base zoomed m ()
+onExit action = void $ addListener (const $ void action :: Exit -> AppT base m ())
 
 -- | Given an Event of any type, this runs any listeners registered for that event type with the provided event.
 -- Events may also contain data pertaining to the event and it will be passed to the listeners.
@@ -88,7 +95,7 @@ onExit action = void $ addListener (const $ void action :: Exit -> ActionT base 
 -- >   -- ["Bob", "Sally"]
 -- >   liftIO $ print lastNames
 -- >   -- ["Smith", "Jenkins"]
-dispatchEvent
+dispatchLocalEvent
   :: forall result eventType m s.
      (MonadState s m
      ,HasEvents s
@@ -97,19 +104,39 @@ dispatchEvent
      ,Typeable eventType
      ,Typeable result)
   => eventType -> m result
-dispatchEvent evt = do
+dispatchLocalEvent evt = do
   LocalListeners _ listeners <- use localListeners
   results <-
     traverse ($ evt) (matchingListeners listeners :: [eventType -> m result])
   return (mconcat results :: result)
 
-dispatchEvent_
+dispatchLocalEvent_
   :: forall eventType m s.
      (MonadState s m
      ,HasEvents s
      ,Typeable m
      ,Typeable eventType)
   => eventType -> m ()
+dispatchLocalEvent_ = dispatchLocalEvent
+
+dispatchEvent
+  :: forall result eventType m base zoomed.
+     (HasEvents base
+     ,Monoid result
+     ,Monad m
+     ,Typeable m
+     ,Typeable eventType
+     ,Typeable result)
+    => eventType -> ActionT base zoomed m result
+dispatchEvent evt = liftApp $ dispatchLocalEvent evt
+
+dispatchEvent_
+  :: forall eventType m base zoomed.
+     (HasEvents base
+     ,Monad m
+     ,Typeable m
+     ,Typeable eventType)
+    => eventType -> ActionT base zoomed m ()
 dispatchEvent_ = dispatchEvent
 
 -- | Registers an 'Action' or 'App' to respond to an event.
@@ -119,7 +146,7 @@ dispatchEvent_ = dispatchEvent
 -- and will be provided @(MyEvent eventInfo)@ as an argument.
 --
 -- This returns a 'ListenerId' which corresponds to the registered listener for use with 'removeListener'
-addListener
+addLocalListener
   :: forall result eventType m s.
      (MonadState s m
      ,HasEvents s
@@ -128,7 +155,7 @@ addListener
      ,Typeable result
      ,Monoid result)
   => (eventType -> m result) -> m ListenerId
-addListener lFunc = do
+addLocalListener lFunc = do
   LocalListeners nextListenerId listeners <- use localListeners
   let (listener, listenerId, eventType) = mkListener nextListenerId lFunc
       newListeners = M.insertWith mappend eventType [listener] listeners
@@ -145,7 +172,7 @@ addListener lFunc = do
           prox = typeRep (Proxy :: Proxy event)
       in (list, listId, prox)
 
-addListener_
+addLocalListener_
   :: forall result eventType m s.
      (MonadState s m
      ,HasEvents s
@@ -154,19 +181,47 @@ addListener_
      ,Typeable result
      ,Monoid result)
   => (eventType -> m result) -> m ()
+addLocalListener_ = void . addLocalListener
+
+addListener
+  :: forall result eventType m base zoomed.
+     (HasEvents base
+     ,Monad m
+     ,Typeable m
+     ,Typeable eventType
+     ,Typeable result
+     ,Monoid result)
+    => (eventType -> AppT base m result) -> ActionT base zoomed m ListenerId
+addListener = liftApp . addLocalListener
+
+addListener_
+  :: forall result eventType m base zoomed.
+     (HasEvents base
+     ,Monad m
+     ,Typeable m
+     ,Typeable eventType
+     ,Typeable result
+     ,Monoid result)
+    => (eventType -> AppT base m result) -> ActionT base zoomed m ()
 addListener_ = void . addListener
 
 -- | Unregisters a listener referred to by the provided 'ListenerId'
-removeListener
+removeLocalListener
   :: (MonadState s m, HasEvents s)
   => ListenerId -> m ()
-removeListener listenerId@(ListenerId _ eventType) = localListeners %= remover
+removeLocalListener listenerId@(ListenerId _ eventType) = localListeners %= remover
   where
     remover (LocalListeners nextListenerId listeners) =
       let newListeners =
             listeners & at eventType . _Just %~ filter (notMatch listenerId)
       in LocalListeners nextListenerId newListeners
     notMatch idA (Listener _ idB _) = idA /= idB
+
+removeListener
+  :: (HasEvents base
+     ,Monad m)
+    => ListenerId -> ActionT base zoomed m ()
+removeListener = liftApp . removeLocalListener
 
 -- | This function takes an IO which results in some event, it runs the IO
 -- asynchronously, THEN dispatches the event. Note that only the
