@@ -93,6 +93,7 @@ module Eve
   , States
   , HasEvents
   , stateLens
+  , makeStateLens
   , AppState
   ) where
 

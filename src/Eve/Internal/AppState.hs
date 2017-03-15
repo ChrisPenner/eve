@@ -1,4 +1,5 @@
 {-# language TemplateHaskell #-}
+{-# language RankNTypes #-}
 module Eve.Internal.AppState
   ( AppState(..)
   , App
@@ -10,6 +11,8 @@ module Eve.Internal.AppState
   , isExiting
 
   , asyncQueue
+
+  , makeStateLens
   ) where
 
 import Eve.Internal.Actions
@@ -80,3 +83,11 @@ type AppM m a = AppT AppState m a
 
 -- | A more general version of 'Action' which lets you to specify the underlying monad.
 type ActionM s m a = ActionT AppState s m a
+
+-- | A utility which creates a state-nested version of a lens.
+-- If you pass this function a lens from your state to one of its fields,
+-- it will return a lens which can be used within an 'App' or 'Action'.
+-- For more complex Prisms or Traversals you can write your own using
+-- 'stateLens'
+makeStateLens :: (HasStates s, Typeable myState, Default myState) => Lens' myState a -> Lens' s a
+makeStateLens = (stateLens .)
