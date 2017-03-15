@@ -17,7 +17,7 @@ appendEx  = modify (++ "!!")
 liftAppTest :: Monad m => ActionT AppState String m String
 liftAppTest = do
   put "new"
-  liftApp $ runAction stateLens appendEx
+  liftApp $ runAction appendEx
   get
 
 data SimpleState = SimpleState
@@ -41,21 +41,26 @@ spec = do
       let (didExit, _) = noIOTest (exit >> isExiting)
        in didExit `shouldBe` True
 
-  describe "runAction " $ do
+  describe "runAction" $ do
     it "runs lifted actions to zoomed monad" $
-      let (runActionResult, _) = noIOTest $ runAction stateLens (put "new" >> appendEx) >> runAction stateLens get
+      let (runActionResult, _) = noIOTest $ runAction (put "new" >> appendEx) >> runAction get
        in runActionResult `shouldBe` "new!!"
 
+  describe "runActionOver" $ do
+    it "runs lifted actions to zoomed monad" $
+      let (runActionOverResult, _) = noIOTest $ runActionOver stateLens (put "new" >> appendEx) >> runActionOver stateLens get
+       in runActionOverResult `shouldBe` "new!!"
+
     it "runs over traversals" $
-      let (traversalResult, _) = noIOTest $ runAction stateLens (put $ Just "new") >> runAction (stateLens._Just) (appendEx >> get)
+      let (traversalResult, _) = noIOTest $ runActionOver stateLens (put $ Just "new") >> runActionOver (stateLens._Just) (appendEx >> get)
        in traversalResult `shouldBe` "new!!"
 
   describe "liftApp" $ do
     it "runs lifted actions to zoomed monad" $
-      let (liftAppResult, _) = noIOTest (runAction stateLens liftAppTest :: AppT AppState Identity String)
+      let (liftAppResult, _) = noIOTest (runAction liftAppTest :: AppT AppState Identity String)
        in liftAppResult `shouldBe` "new!!"
 
   describe "Can run actions over non-HasStates states" $ do
     it "compiles" $
-      let (alterationResult, _) = noIOTest (runAction stateLens alterSimpleState :: AppT AppState Identity String)
+      let (alterationResult, _) = noIOTest (runAction alterSimpleState :: AppT AppState Identity String)
        in alterationResult `shouldBe` "Hello!"

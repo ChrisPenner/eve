@@ -43,7 +43,7 @@ localStateIsolationTest = do
 globalStateIsolationTest :: AppT AppState Identity String
 globalStateIsolationTest = do
   addListener (const (store .= "new") :: CustomEvent -> AppT AppState Identity ())
-  runAction nestedStates $ do
+  runActionOver nestedStates $ do
     dispatchLocalEvent_ CustomEvent
   use store
 
@@ -53,7 +53,7 @@ listenerPassThroughTest = do
       nestedAction = do
         addListener (const (store .= "new") :: CustomEvent -> AppT AppState Identity ())
         dispatchEvent CustomEvent
-  runAction nestedStates nestedAction
+  runActionOver nestedStates nestedAction
   use store
 
 
@@ -70,7 +70,7 @@ spec = do
     it "Triggers Listeners" $ fst (noIOTest basicAction) `shouldBe` "new"
 
   describe "local events" $ do
-    it "local state is isolated from global events" $ fst (noIOTest $ runAction stateLens localStateIsolationTest) `shouldBe` "default"
+    it "local state is isolated from global events" $ fst (noIOTest $ runAction localStateIsolationTest) `shouldBe` "default"
     it "global state is isolated from local events" $ fst (noIOTest globalStateIsolationTest) `shouldBe` "default"
     it "global event actions pass through from local state" $ fst (noIOTest listenerPassThroughTest) `shouldBe` "new"
 

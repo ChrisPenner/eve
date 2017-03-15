@@ -11,6 +11,7 @@ module Eve
   , ActionT
   , liftApp
   , runAction
+  , runActionOver
   , exit
 
   -- * Dispatching Events

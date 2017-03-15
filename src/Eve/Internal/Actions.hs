@@ -1,6 +1,7 @@
 {-# language GeneralizedNewtypeDeriving #-}
 {-# language DeriveFunctor #-}
 {-# language FlexibleInstances #-}
+{-# language FlexibleContexts #-}
 {-# language MultiParamTypeClasses #-}
 {-# language RankNTypes #-}
 {-# language TypeFamilies #-}
@@ -17,11 +18,15 @@ module Eve.Internal.Actions
 
   , liftApp
   , runAction
+  , runActionOver
   ) where
 
+import Eve.Internal.States
 import Control.Monad.State
 import Control.Monad.Trans.Free
 import Control.Lens
+import Data.Typeable
+import Data.Default
 
 -- | An 'App' has the same base and zoomed values.
 type AppT s m a = ActionT s s m a
@@ -56,13 +61,19 @@ type instance Zoomed (ActionT base zoomed m) = Zoomed (FreeT (AppF base m) (Stat
 instance Monad m => Zoom (ActionT base s m) (ActionT base t m) s t where
   zoom l (ActionT action) = ActionT $ zoom l action
 
--- | Given a 'Lens' or 'Traversal' or something similar from "Control.Lens"
+-- | This runs an `Action MyState a` over the MyState which is
+-- stored in the currently focused state and returns the result.
+-- Use 'runActionOver' if you'd like to specify a particular MyState
+-- which is accessed by a Lens or Traversal.
+runAction :: (HasStates t, Functor (Zoomed m c), Default s, Typeable s, Zoom m n s t) => m c -> n c
+runAction = zoom stateLens
+
+-- | Given a 'Lens' or 'Traversal' or LensLike from "Control.Lens"
 -- which focuses the state (t) of an 'Action' from a base state (s),
--- this will convert @Action t a -> Action s a@.
---
--- Given a lens @HasStates s => Lens' s t@ it can also convert @Action t a -> App a@
-runAction :: Zoom m n s t => LensLike' (Zoomed m c) t s -> m c -> n c
-runAction = zoom
+-- this will convert @Action t a -> Action s a@ so that it may be run
+-- in an @Action s a@
+runActionOver :: Zoom m n s t => LensLike' (Zoomed m c) t s -> m c -> n c
+runActionOver = zoom
 
 -- | Allows you to run an 'App' or 'AppM' inside of an 'Action' or 'ActionM'
 liftApp :: Monad m => AppT base m a -> ActionT base zoomed m a

@@ -6,6 +6,19 @@ Use the following sections:
 - `Removed`
 - `Fixed`
 - `Security`
+- `Migration`
+
+## 0.1.6
+### Added
+-   `runActionOver`: This is equivalent to `runAction` in 0.1.5
+
+
+### Changed
+- `runAction` now assumes the `stateLens` by default, if you wish to specify a 
+
+### Migration
+- Change occurances of `runAction` to `runActionOver` and occurances of `runAction stateLens`
+    to just `runAction`.
 
 ## 0.1.5
 ### Added
@@ -15,5 +28,7 @@ Use the following sections:
 ### Changed
 - `dispatchEvent`, `addListener`, `removeListener`
     These now operate ONLY on the global level, and thus only accept `App` types.
-    Migration: change existing `dispatchEvent` on `Actions` to `dispatchLocalEvent`
-    (and similar for addListener and removeListener) 
+
+### Migration
+-   Change existing `dispatchEvent` on `Actions` to `dispatchLocalEvent` (and
+    similar for addListener and removeListener)
