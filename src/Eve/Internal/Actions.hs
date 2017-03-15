@@ -61,16 +61,17 @@ type instance Zoomed (ActionT base zoomed m) = Zoomed (FreeT (AppF base m) (Stat
 instance Monad m => Zoom (ActionT base s m) (ActionT base t m) s t where
   zoom l (ActionT action) = ActionT $ zoom l action
 
--- | This runs an `Aciton MyState a` over a MyState which is stored in the
--- currently focused state and returns the result.
+-- | This runs an `Action MyState a` over the MyState which is
+-- stored in the currently focused state and returns the result.
+-- Use 'runActionOver' if you'd like to specify a particular MyState
+-- which is accessed by a Lens or Traversal.
 runAction :: (HasStates t, Functor (Zoomed m c), Default s, Typeable s, Zoom m n s t) => m c -> n c
 runAction = zoom stateLens
 
--- | Given a 'Lens' or 'Traversal' or something similar from "Control.Lens"
+-- | Given a 'Lens' or 'Traversal' or LensLike from "Control.Lens"
 -- which focuses the state (t) of an 'Action' from a base state (s),
--- this will convert @Action t a -> Action s a@.
---
--- Given a lens @HasStates s => Lens' s t@ it can also convert @Action t a -> App a@
+-- this will convert @Action t a -> Action s a@ so that it may be run
+-- in an @Action s a@
 runActionOver :: Zoom m n s t => LensLike' (Zoomed m c) t s -> m c -> n c
 runActionOver = zoom
 
