@@ -8,6 +8,8 @@ Use the following sections:
 - `Security`
 - `Migration`
 
+---
+
 ## 0.1.6
 ### Added
 -   `runActionOver`: This is equivalent to `runAction` in 0.1.5
@@ -19,7 +21,8 @@ Use the following sections:
 ### Migration
 - Change occurances of `runAction` to `runActionOver` and occurances of `runAction stateLens`
     to just `runAction`.
-
+ 
+---
 ## 0.1.5
 ### Added
 - `dispatchLocalEvent`, `addLocalListener`, `removeLocalListener`
