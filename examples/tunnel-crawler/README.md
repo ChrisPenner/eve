@@ -1,4 +1,12 @@
-# Building your first App with Eve
+Quick Start
+-----------
+
+I'd recommend doing the tutorial yourself, but if you just want to hit the
+ground running you can try out this example by cloning the repo, `cd` into `tunnel-crawler`
+and running `stack build && stack exec tunnel-crawler-exe`.
+
+Building your first App with Eve
+--------------------------------
 
 Glad you could join us! This will be a quick walkthrough of the steps involved
 in building a simple app. After completing this tutorial you should feel
@@ -57,7 +65,7 @@ build-depends should now look like this:
 ```
 
 Eve is a newish package so we'll probably also need to add it to our `stack.yaml`
-file. Go ahead and change the line that says `extra-deps` to `extra-deps: ["eve-0.1.3"]`
+file. Go ahead and change the line that says `extra-deps` to `extra-deps: ["eve-0.1.5"]`
 
 With that stack should be able to find Eve! Open up `app/Main.hs` in your favourite
 text-editor and change main into `main = gameLoop`; we're going to do most of our work in 
