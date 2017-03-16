@@ -14,8 +14,9 @@ import Data.Default
 import Data.List
 
 data Timer = Timer
-data Render = Render
 data KeyPress = KeyPress Char
+data TreasureCollected = TreasureCollected
+data GetStatusInfo = GetStatusInfo
 
 data GameState = GameState
   { _pos' :: Int
@@ -60,7 +61,10 @@ render = do
   liftIO $ putChar '\r'
   n <- use pos
   t <- use treasures
-  liftIO . putStr . replaceAt '$' n . addTreasures t $ tunnel
+  statuses <- getStatusInfo
+  let renderedTunnel = replaceAt '$' n . addTreasures t $ tunnel
+      renderedStatuses = intercalate " | " statuses
+  liftIO . putStr $ renderedTunnel ++ renderedStatuses
     where
       addTreasures t tunnel = foldr (replaceAt '%') tunnel t
 
@@ -73,13 +77,20 @@ collectTreasure :: App ()
 collectTreasure = do
   p <- use pos
   t <- use treasures
-  when (p `elem` t) (treasures %= delete p)
+  when (p `elem` t) $ do
+    treasures %= delete p
+    dispatchEvent_ TreasureCollected
 
 spawnTreasure :: App ()
 spawnTreasure = do
   r <- liftIO $ randomRIO (1, 20)
   treasures %= (r:)
-  dispatchEvent_ Render
+
+getStatusInfo :: App [String]
+getStatusInfo = dispatchEvent GetStatusInfo
+
+provideStatusInfo :: App [String] -> App ()
+provideStatusInfo app = addListener_ (const app :: GetStatusInfo -> App [String])
 
 setup :: App ()
 setup = do
@@ -89,10 +100,12 @@ setup = do
     hSetEcho stdin False
   asyncEventProvider keypressProvider
   addListener_ handleKeypress
-  addListener_ (const render :: Render -> App ())
   addListener_ (const spawnTreasure :: Timer -> App ())
-  afterEvent_ $ dispatchEvent_ Render
+  afterEvent_ render
   asyncEventProvider timer
+  provideStatusInfo $ do
+    p <- use pos
+    return ["Position: " ++ show p]
 
-gameLoop :: IO ()
-gameLoop = eve_ setup
+runCrawler :: App () -> IO ()
+runCrawler extensions = eve_ (setup >> extensions)

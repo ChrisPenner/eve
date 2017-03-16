@@ -1,6 +1,8 @@
 module Main where
 
 import Lib
+import Extension
 
 main :: IO ()
-main = gameLoop
+main = runCrawler $ do
+         keepScore

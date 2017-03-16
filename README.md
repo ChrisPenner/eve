@@ -12,8 +12,10 @@ You can find hackage documentation for eve [HERE](https://hackage.haskell.org/pa
 
 Getting started
 ---------------
-### Building an App in Eve
-Guide coming soon!
+### [Building A Game in Eve](https://github.com/ChrisPenner/eve/blob/master/examples/tunnel-crawler/README.md)
+[Here's](https://github.com/ChrisPenner/eve/blob/master/examples/tunnel-crawler/README.md) a guide which
+walks you through building your first application in Eve from start to finish, it's quite thorough and it's a great
+place to start!
 
 If you have any issues (and I'm sure there'll be a few; it's a new project!)
 please report them [here](https://github.com/ChrisPenner/eve/issues).
