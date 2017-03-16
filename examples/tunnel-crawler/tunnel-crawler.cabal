@@ -17,7 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Lib, Extension
   build-depends:       base >= 4.7 && < 5
-                     , eve
+                     , eve == 0.1.7
                      , mtl
                      , data-default
                      , lens

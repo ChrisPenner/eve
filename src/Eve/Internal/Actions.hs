@@ -12,11 +12,11 @@ module Eve.Internal.Actions
   , ActionT(..)
   , AppT
 
-  , runApp
-  , evalApp
-  , execApp
+  , runEve
+  , evalEve
+  , execEve
 
-  , liftApp
+  , runApp
   , runAction
   , runActionOver
   ) where
@@ -33,7 +33,7 @@ type AppT s m a = ActionT s s m a
 
 -- | A Free Functor for storing lifted App actions.
 newtype AppF base m next =
-  LiftApp (StateT base m next)
+  RunApp (StateT base m next)
   deriving (Functor, Applicative)
 
 -- | Base Action type. Allows paramaterization over application state, zoomed state
@@ -43,7 +43,7 @@ newtype ActionT base zoomed m a = ActionT
   } deriving (Functor, Applicative, Monad, MonadIO, MonadState zoomed)
 
 instance Monad n => MonadFree (AppF base n) (ActionT base zoomed n) where
-  wrap (LiftApp act) = join . ActionT . liftF . LiftApp $ act
+  wrap (RunApp act) = join . ActionT . liftF . RunApp $ act
 
 instance MonadTrans (ActionT base zoomed) where
   lift = ActionT . lift . lift
@@ -54,7 +54,7 @@ unLift m = do
   step <- runFreeT m
   case step of
     Pure a -> return a
-    Free (LiftApp next) -> next >>= unLift
+    Free (RunApp next) -> next >>= unLift
 
 -- | Allows 'zoom'ing 'Action's.
 type instance Zoomed (ActionT base zoomed m) = Zoomed (FreeT (AppF base m) (StateT zoomed m))
@@ -75,18 +75,18 @@ runAction = zoom stateLens
 runActionOver :: Zoom m n s t => LensLike' (Zoomed m c) t s -> m c -> n c
 runActionOver = zoom
 
--- | Allows you to run an 'App' or 'AppM' inside of an 'Action' or 'ActionM'
-liftApp :: Monad m => AppT base m a -> ActionT base zoomed m a
-liftApp = liftF .  LiftApp . unLift . getAction
+-- | Allows you to run an 'App' inside of an 'Action'
+runApp :: Monad m => AppT base m a -> ActionT base zoomed m a
+runApp = liftF .  RunApp . unLift . getAction
 
 -- | Runs an application and returns the value and state.
-runApp :: Monad m => base -> AppT base m a -> m (a, base)
-runApp baseState = flip runStateT baseState . unLift . getAction
+runEve :: Monad m => base -> AppT base m a -> m (a, base)
+runEve baseState = flip runStateT baseState . unLift . getAction
 
 -- | Runs an application and returns the resulting value.
-evalApp :: Monad m => base -> AppT base m a -> m a
-evalApp baseState = fmap fst . runApp baseState
+evalEve :: Monad m => base -> AppT base m a -> m a
+evalEve baseState = fmap fst . runEve baseState
 
 -- | Runs an application and returns the resulting state.
-execApp :: Monad m => base -> AppT base m a -> m base
-execApp baseState = fmap snd . runApp baseState
+execEve :: Monad m => base -> AppT base m a -> m base
+execEve baseState = fmap snd . runEve baseState

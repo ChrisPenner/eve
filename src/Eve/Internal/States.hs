@@ -37,7 +37,7 @@ class HasStates s  where
 -- empty instance:
 --
 -- > instance HasEvents MyState where
--- -- Don't need anything here.
+-- > -- Don't need anything here.
 class (Typeable s, HasStates s) =>
       HasEvents s
 
@@ -58,8 +58,11 @@ stateLens = lens getter setter
 -- | A utility which creates a state-nested version of a lens.
 -- If you pass this function a lens from your state to one of its fields,
 -- it will return a lens which can be used within an 'App' or 'Action'.
--- 
+--
 -- The resulting lens will be of type: @newLens :: HasStates s => Lens' s MyState@
+-- Or if you prefer, you may wish to specify the state it operates over more specifically
+-- to prevent using the lens where it was not originally planned. For instance:
+-- @newLens :: Lens' AppState MyState@
 --
 -- > data SimpleState = SimpleState
 -- >   { _myString :: String

@@ -14,10 +14,10 @@ import Data.Default
 appendEx  :: Monad m => ActionT AppState String m ()
 appendEx  = modify (++ "!!")
 
-liftAppTest :: Monad m => ActionT AppState String m String
-liftAppTest = do
+runAppTest :: Monad m => ActionT AppState String m String
+runAppTest = do
   put "new"
-  liftApp $ runAction appendEx
+  runApp $ runAction appendEx
   get
 
 data SimpleState = SimpleState
@@ -55,10 +55,10 @@ spec = do
       let (traversalResult, _) = noIOTest $ runActionOver stateLens (put $ Just "new") >> runActionOver (stateLens._Just) (appendEx >> get)
        in traversalResult `shouldBe` "new!!"
 
-  describe "liftApp" $ do
+  describe "runApp" $ do
     it "runs lifted actions to zoomed monad" $
-      let (liftAppResult, _) = noIOTest (runAction liftAppTest :: AppT AppState Identity String)
-       in liftAppResult `shouldBe` "new!!"
+      let (runAppResult, _) = noIOTest (runAction runAppTest :: AppT AppState Identity String)
+       in runAppResult `shouldBe` "new!!"
 
   describe "Can run actions over non-HasStates states" $ do
     it "compiles" $

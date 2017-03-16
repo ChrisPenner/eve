@@ -30,7 +30,7 @@ module Eve.Internal.Listeners
 
   , Listener
   , ListenerId
-  , Dispatcher
+  , EventDispatcher
   ) where
 
 import Eve.Internal.States
@@ -49,52 +49,30 @@ import qualified Data.Map as M
 -- | Registers an action to be performed directly following the Initialization phase.
 --
 -- At this point any listeners in the initialization block have run, so you may 'dispatchEvent's here.
-afterInit :: forall base m a. (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> AppT base m ()
-afterInit action = void $ addListener (const (void action) :: AfterInit -> AppT base m ())
+afterInit :: forall base m a. (Monad m, HasEvents base, Typeable m) => AppT base m a -> AppT base m ()
+afterInit action = addListener_ (const (void action) :: AfterInit -> AppT base m ())
 
 -- | Registers an action to be performed BEFORE each async event is processed phase.
-beforeEvent :: forall base zoomed m a. (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> ActionT base zoomed m ListenerId
+beforeEvent :: forall base zoomed m a. (Monad m, HasEvents base, Typeable m) => AppT base m a -> ActionT base zoomed m ListenerId
 beforeEvent action = addListener (const (void action) :: BeforeEvent -> AppT base m ())
 
-beforeEvent_ :: (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> ActionT base zoomed m ()
+beforeEvent_ :: (Monad m, HasEvents base, Typeable m) => AppT base m a -> ActionT base zoomed m ()
 beforeEvent_ = void . beforeEvent
 
 -- | Registers an action to be performed AFTER each event phase.
-afterEvent :: forall base zoomed m a. (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> ActionT base zoomed m ListenerId
+afterEvent :: forall base zoomed m a. (Monad m, HasEvents base, Typeable m) => AppT base m a -> ActionT base zoomed m ListenerId
 afterEvent action = addListener (const (void action) :: AfterEvent -> AppT base m ())
 
-afterEvent_ :: (Monad m, HasEvents base, Typeable m, Typeable base) => AppT base m a -> ActionT base zoomed m ()
+afterEvent_ :: (Monad m, HasEvents base, Typeable m) => AppT base m a -> ActionT base zoomed m ()
 afterEvent_ = void . afterEvent
 
 -- | Registers an action to be run before shutdown. Any asynchronous combinators used in this block will NOT be run.
-onExit :: forall base zoomed m a. (HasEvents base, Typeable m, Typeable base, Monad m) => AppT base m a -> ActionT base zoomed m ()
-onExit action = void $ addListener (const $ void action :: Exit -> AppT base m ())
+onExit :: forall base zoomed m a. (HasEvents base, Typeable m, Monad m) => AppT base m a -> ActionT base zoomed m ()
+onExit action = addListener_ (const (void action) :: Exit -> AppT base m ())
 
--- | Given an Event of any type, this runs any listeners registered for that event type with the provided event.
--- Events may also contain data pertaining to the event and it will be passed to the listeners.
---
--- You can also 'query' listeners and receive a ('Monoid'al) result.
---
--- > data RequestNames = GetFirstName | GetLastName
--- > provideName1, provideName2 :: RequestNames -> App [String]
--- > provideName1 GetFirstNames = return ["Bob"]
--- > provideName1 GetLastNames = return ["Smith"]
--- > provideName2 GetFirstNames = return ["Sally"]
--- > provideName2 GetLastNames = return ["Jenkins"]
--- >
--- > -- Note that if we registered an action of type 'GetFirstName -> ()' it would NOT
--- > -- be run in response to the following 'dispatchEvent', since it's type doesn't match.
--- >
--- > greetNames :: App [String]
--- > greetNames = do
--- >   addListener_ provideName1
--- >   addListener_ provideName2
--- >   firstNames <- dispatchEvent GetFirstName
--- >   lastNames <- dispatchEvent GetLastName
--- >   liftIO $ print firstNames
--- >   -- ["Bob", "Sally"]
--- >   liftIO $ print lastNames
--- >   -- ["Smith", "Jenkins"]
+-- | A local version of 'dispatchEvent'.
+-- The local version dispatches the event in the context of the current 'Action',
+-- If you don't know what this means, you probably want 'dispatchEvent' instead
 dispatchLocalEvent
   :: forall result eventType m s.
      (MonadState s m
@@ -119,6 +97,30 @@ dispatchLocalEvent_
   => eventType -> m ()
 dispatchLocalEvent_ = dispatchLocalEvent
 
+-- | Runs any listeners registered for the provided event with the provided event;
+--
+-- You can also 'query' listeners and receive a ('Monoid'al) result.
+--
+-- > data RequestNames = GetFirstName | GetLastName
+-- > provideName1, provideName2 :: RequestNames -> App [String]
+-- > provideName1 GetFirstNames = return ["Bob"]
+-- > provideName1 GetLastNames = return ["Smith"]
+-- > provideName2 GetFirstNames = return ["Sally"]
+-- > provideName2 GetLastNames = return ["Jenkins"]
+-- >
+-- > -- Note that if we registered an action of type 'GetFirstName -> ()' it would NOT
+-- > -- be run in response to the following 'dispatchEvent', since it's type doesn't match.
+-- >
+-- > greetNames :: App [String]
+-- > greetNames = do
+-- >   addListener_ provideName1
+-- >   addListener_ provideName2
+-- >   firstNames <- dispatchEvent GetFirstName
+-- >   lastNames <- dispatchEvent GetLastName
+-- >   liftIO $ print firstNames
+-- >   -- ["Bob", "Sally"]
+-- >   liftIO $ print lastNames
+-- >   -- ["Smith", "Jenkins"]
 dispatchEvent
   :: forall result eventType m base zoomed.
      (HasEvents base
@@ -128,7 +130,7 @@ dispatchEvent
      ,Typeable eventType
      ,Typeable result)
     => eventType -> ActionT base zoomed m result
-dispatchEvent evt = liftApp $ dispatchLocalEvent evt
+dispatchEvent evt = runApp $ dispatchLocalEvent evt
 
 dispatchEvent_
   :: forall eventType m base zoomed.
@@ -139,13 +141,8 @@ dispatchEvent_
     => eventType -> ActionT base zoomed m ()
 dispatchEvent_ = dispatchEvent
 
--- | Registers an 'Action' or 'App' to respond to an event.
---
--- For a given use: @addListener myListener@, @myListener@ might have the type @MyEvent -> App a@
--- it will register the function @myListener@ to be run in response to a @dispatchEvent (MyEvent eventInfo)@
--- and will be provided @(MyEvent eventInfo)@ as an argument.
---
--- This returns a 'ListenerId' which corresponds to the registered listener for use with 'removeListener'
+-- | The local version of 'addListener'. It will register a listener within an 'Action's local event
+-- context. If you don't know what this means you probably want 'addListener' instead.
 addLocalListener
   :: forall result eventType m s.
      (MonadState s m
@@ -183,6 +180,13 @@ addLocalListener_
   => (eventType -> m result) -> m ()
 addLocalListener_ = void . addLocalListener
 
+-- | Registers an 'Action' or 'App' to respond to an event.
+--
+-- For a given use: @addListener myListener@, @myListener@ might have the type @MyEvent -> App a@
+-- it will register the function @myListener@ to be run in response to a @dispatchEvent (MyEvent eventInfo)@
+-- and will be provided @(MyEvent eventInfo)@ as an argument.
+--
+-- This returns a 'ListenerId' which corresponds to the registered listener for use with 'removeListener'
 addListener
   :: forall result eventType m base zoomed.
      (HasEvents base
@@ -192,7 +196,7 @@ addListener
      ,Typeable result
      ,Monoid result)
     => (eventType -> AppT base m result) -> ActionT base zoomed m ListenerId
-addListener = liftApp . addLocalListener
+addListener = runApp . addLocalListener
 
 addListener_
   :: forall result eventType m base zoomed.
@@ -205,7 +209,9 @@ addListener_
     => (eventType -> AppT base m result) -> ActionT base zoomed m ()
 addListener_ = void . addListener
 
--- | Unregisters a listener referred to by the provided 'ListenerId'
+-- | The local version of 'removeListener'.
+-- This removes a listener from an 'Action's event context. If you don't
+-- know what this means you probably want 'removeListener' instead.
 removeLocalListener
   :: (MonadState s m, HasEvents s)
   => ListenerId -> m ()
@@ -217,11 +223,12 @@ removeLocalListener listenerId@(ListenerId _ eventType) = localListeners %= remo
       in LocalListeners nextListenerId newListeners
     notMatch idA (Listener _ idB _) = idA /= idB
 
+-- | Unregisters a listener referred to by the provided 'ListenerId'
 removeListener
   :: (HasEvents base
      ,Monad m)
     => ListenerId -> ActionT base zoomed m ()
-removeListener = liftApp . removeLocalListener
+removeListener = runApp . removeLocalListener
 
 -- | This function takes an IO which results in some event, it runs the IO
 -- asynchronously, THEN dispatches the event. Note that only the
@@ -287,7 +294,7 @@ getListener (Listener _ _ x) = cast x
 -- | This is a type alias to make defining your functions for use with 'asyncEventProvider' easier;
 -- It represents the function your event provider function will be passed to allow dispatching
 -- events. Using this type requires the @RankNTypes@ language pragma.
-type Dispatcher = forall event. Typeable event =>
+type EventDispatcher = forall event. Typeable event =>
                                 event -> IO ()
 
 -- | This allows long-running IO processes to provide Events to the application asyncronously.
@@ -296,9 +303,9 @@ type Dispatcher = forall event. Typeable event =>
 --
 -- Let's break it down:
 --
--- Using the 'Dispatcher' type with asyncEventProvider requires the @RankNTypes@ language pragma.
+-- Using the 'EventDispatcher' type with asyncEventProvider requires the @RankNTypes@ language pragma.
 --
--- This type as a whole represents a function which accepts a 'Dispatcher' and returns an 'IO';
+-- This type as a whole represents a function which accepts an 'EventDispatcher' and returns an 'IO';
 -- the dispatcher itself accepts data of ANY 'Typeable' type and emits it as an event.
 --
 -- When you call 'asyncEventProvider' you pass it a function which accepts a @dispatch@ function as an argument
@@ -310,15 +317,15 @@ type Dispatcher = forall event. Typeable event =>
 --
 -- > {-# language RankNTypes #-}
 -- > data Timer = Timer
--- > myTimer :: Dispatcher -> IO ()
+-- > myTimer :: EventDispatcher -> IO ()
 -- > myTimer dispatch = forever $ dispatch Timer >> threadDelay 1000000
 -- >
 -- > myInit :: App ()
 -- > myInit = asyncEventProvider myTimer
 asyncEventProvider
-  :: (HasEvents base, MonadIO m, Typeable m) => (Dispatcher -> IO ()) -> ActionT base zoomed m ()
+  :: (HasEvents base, MonadIO m, Typeable m) => (EventDispatcher -> IO ()) -> ActionT base zoomed m ()
 asyncEventProvider asyncEventProv = asyncActionProvider $ eventsToActions asyncEventProv
   where
-    eventsToActions :: (Monad m, HasEvents base, Typeable m) => (Dispatcher -> IO ()) -> (AppT base m () -> IO ()) -> IO ()
+    eventsToActions :: (Monad m, HasEvents base, Typeable m) => (EventDispatcher -> IO ()) -> (AppT base m () -> IO ()) -> IO ()
     eventsToActions aEventProv dispatcher =
       aEventProv (dispatcher . dispatchEvent)

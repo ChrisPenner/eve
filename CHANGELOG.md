@@ -10,6 +10,17 @@ Use the following sections:
 
 ---
 
+## 0.1.7
+### Changed
+- `Dispatcher` is now called `EventDispatcher` to alleviate confusion.
+- `liftApp` is now called `runApp`.
+- `eve_` now has the simplified type `eve_ :: App () -> IO ()`
+
+### Migration
+- Rename all `Dispatcher` -> `EventDispatcher`
+- Rename all `liftApp` -> `runApp`
+ 
+---
 ## 0.1.6
 ### Added
 -   `runActionOver`: This is equivalent to `runAction` in 0.1.5

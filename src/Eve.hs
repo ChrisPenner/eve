@@ -1,48 +1,51 @@
 module Eve
   (
-  -- * Running your App
-  eve
-  , eve_
+  -- | This documentation is split into parts based on complexity.
+  -- For most applications you'll need only the Simple section. You'll
+  -- find useful tools in the Advanced section once you've got a simple app
+  -- up and running.
 
-  -- * Working with Actions
+  -- * Simple
+  -- | Eve allows you to build your applications incrementally, adding more
+  -- complexity as you need it. For this reason, many of the types are more
+  -- general than you'll likely need. This can be a bit confusing, but here's
+  -- a few tips:
+  --
+  --    * Both 'Action' and 'App' unify with 'ActionT'. You may use them in place of
+  --    'ActionT'. When in doubt, use 'App'.
+  --    * When you see vague references to monads @m@ or @n@, you can use 'App' or 'Action' in its place.
+  --    * Simple Apps assume that you use the provided 'AppState' and it is
+  --      "baked in" to the 'Action' and 'App' types. Wherever you see @'HasStates' s@
+  --      you can mentally replace @s@ with 'AppState'.
+
+  -- ** Running your App
+  eve_
+
+  -- ** Working with Actions
   , App
   , Action
-  , AppT
-  , ActionT
-  , liftApp
+  , runApp
   , runAction
-  , runActionOver
   , exit
 
-  -- * Dispatching Events
+  -- ** Dispatching Events
   , dispatchEvent
   , dispatchEvent_
 
-  , dispatchLocalEvent
-  , dispatchLocalEvent_
-
-  , dispatchEventAsync
-  , dispatchActionAsync
-
-  -- * Event Listeners
+  -- ** Event Listeners
   , addListener
   , addListener_
 
-  , addLocalListener
-  , addLocalListener_
-
   , removeListener
-  , removeLocalListener
 
   , Listener
   , ListenerId
 
-  -- * Asynchronous Helpers
-  , asyncActionProvider
+  -- ** Asynchronous Helpers
   , asyncEventProvider
-  , Dispatcher
+  , EventDispatcher
 
-  -- * Built-in Event Listeners
+  -- ** Built-in Event Listeners
   , afterInit
   , beforeEvent
   , beforeEvent_
@@ -50,7 +53,7 @@ module Eve
   , afterEvent_
   , onExit
 
-  -- * Working with State
+  -- ** Working with State
   -- | All application-provided states are stored in the same
   -- Map; keyed by their 'Data.Typeable.TypeRep'. This means that if more than one state
   -- uses the same type then they'll conflict and overwrite each-other (this is less of a
@@ -60,9 +63,9 @@ module Eve
   -- @Counter@ newtype when storing it. If you wish to store multiple copies of a given state
   -- simply store them in a list or map, then store that container as your state.
   --
-  -- Because states are stored by their 'Data.Typeable.TypeRep', they must define an
-  -- instance of 'Data.Typeable.Typeable', luckily GHC can derive this for you with
-  -- @deriving Typeable@.
+  -- Because states are stored by their 'Data.Typeable.TypeRep', they must
+  -- define an instance of 'Data.Typeable.Typeable', In most cases it's
+  -- unnecessary, but GHC can derive this for you with @deriving Typeable@.
   --
   -- It is also required for all states to define an instance of
   -- 'Data.Default.Default', this is because accessing an extension which has not
@@ -72,29 +75,58 @@ module Eve
   -- a default of 'Data.Maybe.Nothing' and pattern-match on its value when you
   -- access it.
   --
-  -- Stored states are accessed by using the `stateLens` lens, this lens is polymorphic
-  -- and can return ANY type. GHC infers the needed type and the lens will retrieve the
-  -- state that you want from the store of states. It seems a bit complicated, but it all
-  -- works fine in practice.
+  -- Here's an example of defining your own state:
   --
-  -- To avoid confusion it's best to rename a version of `stateLens` with a more restrictive
-  -- type for each different state type that you store. This helps prevent strange errors and
-  -- makes your code much easier to read. For example:
-  --
-  -- > data MyState = MyState String
-  -- > myState :: HasStates s => Lens' s MyState
-  -- > myState = stateLens
+  -- > data SimpleState = SimpleState
+  -- >   { _myString :: String
+  -- >   }
+  -- > makeLenses ''SimpleState
   -- >
-  -- > myAction = do
-  -- >   MyState str <- use stateLens
-  --
-  -- If GHC has trouble inferring the type, rename it and restrict the type as above.
-  , HasStates(..)
-  , States
-  , HasEvents
-  , stateLens
+  -- > instance Default SimpleState where
+  -- >   def = SimpleState "default"
   , makeStateLens
   , AppState
+
+  -- * Advanced
+  -- | This section provides tools which become relevant when working on more
+  -- complex apps. You can customize which states you operate over, embed events
+  -- in nested states, and choose a custom base monad for the mtl stack.
+
+  , eve
+  -- ** Actions
+  , AppT
+  , ActionT
+  , runActionOver
+
+  -- ** States
+  , HasStates(..)
+  , States
+  , stateLens
+
+  -- ** Local Events
+
+  -- | The local versions of the event functions are the same as the others ('dispatchEvent',
+  -- 'addListener', 'removeListener') however they operate on a per-state basis.
+  -- This means that if you define a custom state which implements 'HasEvents'
+  -- then you may use these functions inside an `Action CustomState` to dispatch events
+  -- to ONLY the listners within that specific instance of that state. Note that
+  -- these listeners and events are distinct on the value level, not just the type level,
+  -- so if you have multiple copies of CustomState in your app, they each have their
+  -- own disjoint event listeners.
+  , HasEvents
+  , dispatchLocalEvent
+  , dispatchLocalEvent_
+
+  , addLocalListener
+  , addLocalListener_
+
+  , removeLocalListener
+
+  -- ** Async
+  , asyncActionProvider
+
+  , dispatchEventAsync
+  , dispatchActionAsync
   ) where
 
 import Eve.Internal.Run

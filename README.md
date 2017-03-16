@@ -77,7 +77,7 @@ main = eve_ $ do
   addListener_ scoreContributor1
   addListener_ scoreContributor2
 
-  -- This dispatchers the triggering event and monoidally sums all the individual score components!
+  -- This dispatches the triggering event and monoidally sums all the individual score components!
 computeTotalScore :: App (Sum Int)
 computeTotalScore = do
   Sum score <- dispatchEvent ComputeScore

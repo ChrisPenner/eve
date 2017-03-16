@@ -22,24 +22,38 @@ import Data.Typeable
 -- between calling 'dispatchActionAsync' and running the resulting 'Action'
 dispatchActionAsync
   :: (MonadIO m, HasStates base, Typeable m, Typeable base) => IO (AppT base m ()) -> ActionT base zoomed m ()
-dispatchActionAsync asyncAction = liftApp $ do
+dispatchActionAsync asyncAction = runApp $ do
   mQueue <- use asyncQueue
   case mQueue of
     Nothing -> return ()
     Just queue -> liftIO . void . forkIO $ asyncAction >>= writeChan queue
 
 -- | This allows long-running IO processes to provide 'Action's to the application asyncronously.
+-- 
+-- 'asyncEventProvider' is simpler to use, however 'asyncActionProvider' provides
+-- more power and expressivity. When in doubt, 'asyncEventProvider' probably meets
+-- your needs.
 --
 -- Don't let the type signature confuse you; it's much simpler than it seems.
 --
 -- Let's break it down:
 --
 -- When you call 'asyncActionProvider' you pass it a function which accepts a @dispatch@ function as an argument
--- and then calls it with various 'Action's within the resulting 'IO'.
+-- and then calls it with various 'Action's within the resulting 'IO'. The
+-- @dispatch@ function it is passed will have type @(App () -> IO ())@
 --
 -- Note that this function calls forkIO internally, so there's no need to do that yourself.
+--
+-- Here's an example:
+--
+-- > data Timer = Timer
+-- > myTimer :: (App () -> IO ()) -> IO ()
+-- > myTimer dispatch = forever $ dispatch (myInt += 1) >> threadDelay 1000000
+-- >
+-- > myInit :: App ()
+-- > myInit = asyncActionProvider myTimer
 asyncActionProvider :: (MonadIO m, HasStates base, Typeable m, Typeable base) => ((AppT base m () -> IO ()) -> IO ()) -> ActionT base zoomed m ()
-asyncActionProvider provider = liftApp $ do
+asyncActionProvider provider = runApp $ do
   mQueue <- use asyncQueue
   case mQueue of
     Nothing -> return ()

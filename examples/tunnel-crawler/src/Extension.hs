@@ -16,7 +16,7 @@ makeLenses ''Score
 instance Default Score where
   def = Score 0
 
-score :: HasStates s => Lens' s Int
+score :: Lens' AppState Int
 score = makeStateLens score'
 
 addPoint :: App ()

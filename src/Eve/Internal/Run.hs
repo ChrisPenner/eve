@@ -16,40 +16,38 @@ import Control.Lens
 import Data.Default
 import Data.Typeable
 
--- | This runs your application. It accepts an initialization block (which
--- is the same as any other 'App' or 'Action' block, which
--- registers event listeners and event providers. Note that nothing in this
--- block should use 'dispatchEvent' since it is possible that not all listeners
--- have yet been registered. You can use the 'afterInit' trigger to dispatch
--- any events you'd like to run at start-up.
---
--- It is polymorphic in the Monad it operates over, so you may use it with any 
--- custom base monad which implements 'MonadIO'.
---
--- If you don't need this functionality; the easiest way to get started is to simply
--- call it like so:
---
--- > import Eve
--- >
--- > initialize = App ()
--- > initialize = do
--- >   addListener ...
--- >   ...
--- >
--- > startApp :: IO ()
--- > startApp = eve_ initialize
+-- | This runs your application like 'eve_',
+-- It is polymorphic in the Monad it operates over, so you may use it with any
+-- custom base monad which implements 'MonadIO'. Upon termination of the app it
+-- returns the final 'AppState'.
 eve :: (MonadIO m, Typeable m) => AppT AppState m () -> m AppState
 eve initialize = do
   chan <- liftIO newChan
-  execApp (def & asyncQueue .~ Just chan) $ do
+  execEve (def & asyncQueue .~ Just chan) $ do
     initialize
     dispatchEvent_ Init
     dispatchEvent_ AfterInit
     eventLoop chan
     dispatchEvent_ Exit
 
--- | 'eve' with '()' as its return value.
-eve_ :: (MonadIO m, Typeable m) => AppT AppState m () -> m ()
+-- | This runs your application. It accepts an initialization block (which
+-- is the same as any other 'App' or 'Action' block, which
+-- registers event listeners and event providers. Note that nothing in this
+-- block should use 'dispatchEvent' since it is possible that not all listeners
+-- have yet been registered. You can use the 'afterInit' trigger to dispatch
+-- any events you'd like to run at start-up.
+-- Here's a simple example:
+--
+-- > import Eve
+-- >
+-- > initialize = App ()
+-- > initialize = do
+-- >   addListener_ myListener
+-- >   asyncEventProvider myProvider
+-- >
+-- > startApp :: IO ()
+-- > startApp = eve_ initialize
+eve_ :: App () -> IO ()
 eve_ = void . eve
 
 -- | This is the main event loop, it runs recursively forever until something

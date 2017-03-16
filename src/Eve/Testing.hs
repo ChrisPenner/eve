@@ -9,4 +9,4 @@ import Control.Monad.Identity
 import Data.Default
 
 noIOTest :: AppT AppState Identity a -> (a, AppState)
-noIOTest = runIdentity . runApp def
+noIOTest = runIdentity . runEve def

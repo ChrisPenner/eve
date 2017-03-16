@@ -94,26 +94,21 @@ get started on actually using Eve!
 Providing Events
 --------------------
 
-There are two functions which can be used to run an eve app; namely:
+So `eve_` is the main function we'll be using to run our app;
+it looks like this:
 
-- `eve :: (MonadIO m, Typeable m) => AppT AppState m () -> m AppState`
-- `eve_ :: (MonadIO m, Typeable m) => AppT AppState m () -> m ()`
+```haskell
+eve_ :: App () -> IO ()
+```
 
-The only difference being that `eve` returns the final application state and
-`eve_` does not, we don't need the final state so we'll go with `eve_`.
-For those who care about type-signatures, you'll notice that the signatures
-are polymorphic over m, which allows you to use any base monad you like with Eve,
-however that's more advanced than we'll be getting with this tutorial.
-
-You can see that `eve_` takes an `AppT AppState m ()` whatever that means!
-Actually, for simple apps we can use the type alias `App ()` which just serves
-to hide any complexity we don't care about. `App` is a monad (if you're not
-familiar with monads that's okay; a bit of familiarity goes a long way, but you
-should still be able to follow along); There are two types of 'commands' or
-'actions' that we care about with Eve, `App`s and `Action`s. They're almost
-identical except that `Action`s can be made to run over specific states whereas
-`App`s can only be used over the application's global state. This will all make
-sense in a second I swear!  Let's come back to that in a bit.
+You can see that `eve_` takes an `App ()` as its only argument. `App` is a
+monad (if you're not familiar with monads that's okay; a bit of familiarity
+goes a long way, but you should still be able to follow along); There are two
+types of 'commands' or 'actions' that we care about with Eve, `App`s and
+`Action`s. They're almost identical except that `Action`s can be made to run
+over specific states whereas `App`s can only be used over the application's
+global state. This will all make sense in a second I swear! Let's come back to
+that in a bit.
 
 Okay! So, we saw that `eve_` needs an `App` in order to run, the basic idea is
 that you pass `eve_` an `App` which describes your application's setup.
@@ -159,7 +154,7 @@ import Control.Monad
 data KeyPress = KeyPress Char
 
 -- This provides KeyPress events to our app
-keypressProvider :: Dispatcher -> IO ()
+keypressProvider :: EventDispatcher -> IO ()
 keypressProvider dispatcher = forever $ do
   c <- getChar 
   dispatcher $ KeyPress c
@@ -174,19 +169,19 @@ gameLoop = eve_ setup
 ```
 
 Okay, so we've added a `keypressProvider`, it has the type
-`Dispatcher -> IO ()` which seems a bit strange, how does it work?
-Dispatcher is a type alias provided by Eve which resolves to:
+`EventDispatcher -> IO ()` which seems a bit strange, how does it work?
+EventDispatcher is a type alias provided by Eve which resolves to:
 
 ```haskell
-type Dispatcher = forall event. event -> IO ()
+type EventDispatcher = forall event. event -> IO ()
 ```
 
-It means that our 'provider' needs to be a function which accepts a `Dispatcher` as its
+It means that our 'provider' needs to be a function which accepts a `EventDispatcher` as its
 first argument, and then we can just call that `dispatcher` function any time we have a 
 new event and it'll make sure it gets where it needs to go. In this case we use `forever`
 to continually `getChar`s from stdin and dispatch a `KeyPress` event for each one!
 Note that we added the `RankNTypes` language pragma at the top of the file, we'll need
-that any time we use the `Dispatcher` type.
+that any time we use the `EventDispatcher` type.
 
 If you were to run the app now you'd notice that it no longer crashes, but no matter what
 you type nothing happens! That's because we're dispatching events, but there's no-one listening!
@@ -204,7 +199,7 @@ import Control.Monad.Trans
 
 data KeyPress = KeyPress Char
 
-keypressProvider :: Dispatcher -> IO ()
+keypressProvider :: EventDispatcher -> IO ()
 keypressProvider dispatcher = forever $ do
   c <- getChar
   dispatcher (KeyPress c)
@@ -314,7 +309,7 @@ handleKeypress :: KeyPress -> App ()
 handleKeypress (KeyPress c) = do
   runAction $ updatePos c
   GameState pos <- runAction get
-  liftApp . liftIO $ print pos
+  liftIO $ print pos
 ```
 
 Then we'll go ahead and remove the old `addListener_` call and replace it
@@ -328,7 +323,8 @@ library](https://hackage.haskell.org/package/lens) comes in. Eve cooperates
 nicely with different lenses and lens combinators. Let's rewrite our `handleKeypress`
 and `updatePos` using lenses to clean it up a bit.
 
-It's been a while since we've showed the whole file, here's a checkpoint for you:
+It's been a while since we've showed the whole file, here's a checkpoint for you, 
+I've added comments explaining how we've cleaned things up using lenses!
 
 ```haskell
 {-# LANGUAGE RankNTypes #-}
@@ -365,7 +361,8 @@ instance Default GameState where
 -- Now that we have the pos' lens from GameState to our int, we can
 -- use Eve's 'makeStateLens' utility to generate a lens for us which will
 -- work inside 'Action's and 'App's!
-pos :: HasStates s => Lens' s Int
+-- 'App' keeps track of an 'AppState' for us, so that shows up in this lens type
+pos :: Lens' AppState Int
 pos = makeStateLens pos'
 
 handleKeypress :: KeyPress -> App ()
@@ -377,9 +374,9 @@ handleKeypress (KeyPress c) = do
     'd' -> pos += 1
     _ -> return ()
   position <- use pos
-  liftApp . liftIO $ print position
+  liftIO $ print position
 
-keypressProvider :: Dispatcher -> IO ()
+keypressProvider :: EventDispatcher -> IO ()
 keypressProvider dispatcher = forever $ do
   c <- getChar
   dispatcher (KeyPress c)
@@ -494,7 +491,7 @@ makeLenses ''GameState
 instance Default GameState where
   def = GameState 0
 
-pos :: HasStates s => Lens' s Int
+pos :: Lens' AppState Int
 pos = makeStateLens pos'
 
 handleKeypress :: KeyPress -> App ()
@@ -504,7 +501,7 @@ handleKeypress (KeyPress c) = do
     'd' -> pos += 1
     _ -> return ()
 
-keypressProvider :: Dispatcher -> IO ()
+keypressProvider :: EventDispatcher -> IO ()
 keypressProvider dispatcher = forever $ do
   c <- getChar
   dispatcher (KeyPress c)
@@ -562,7 +559,7 @@ data Timer = Timer
 
 -- This dispatches a Timer event every 3 seconds
 -- for some reason threadDelay takes microseconds :/
-timer :: Dispatcher -> IO ()
+timer :: EventDispatcher -> IO ()
 timer dispatch = forever $ do
   threadDelay 3000000
   dispatch Timer
@@ -594,7 +591,7 @@ data GameState = GameState
 instance Default GameState where
   def = GameState 0 []
 
-treasures :: HasStates s => Lens' s [Int]
+treasures :: Lens' AppState [Int]
 treasures = makeStateLens treasures'
 
 -- This generates a random position within our tunnel then adds
@@ -697,10 +694,10 @@ makeLenses ''GameState
 instance Default GameState where
   def = GameState 0 []
 
-pos :: HasStates s => Lens' s Int
+pos :: Lens' AppState Int
 pos = makeStateLens pos'
 
-treasures :: HasStates s => Lens' s [Int]
+treasures :: Lens' AppState [Int]
 treasures = makeStateLens treasures'
 
 handleKeypress :: KeyPress -> App ()
@@ -711,7 +708,7 @@ handleKeypress (KeyPress c) = do
     _ -> return ()
   collectTreasure
 
-keypressProvider :: Dispatcher -> IO ()
+keypressProvider :: EventDispatcher -> IO ()
 keypressProvider dispatcher = forever $ do
   c <- getChar
   dispatcher (KeyPress c)
@@ -735,7 +732,7 @@ render = do
     where
       addTreasures t tunnel = foldr (replaceAt '%') tunnel t
 
-timer :: Dispatcher -> IO ()
+timer :: EventDispatcher -> IO ()
 timer dispatch = forever $ do
   threadDelay 3000000
   dispatch Timer
@@ -839,7 +836,7 @@ makeLenses ''Score
 instance Default Score where
   def = Score 0
 
-score :: HasStates s => Lens' s Int
+score :: Lens' AppState Int
 score = makeStateLens score'
 
 addPoint :: App ()
@@ -932,7 +929,7 @@ makeLenses ''Score
 instance Default Score where
   def = Score 0
 
-score :: HasStates s => Lens' s Int
+score :: Lens' AppState Int
 score = makeStateLens score'
 
 addPoint :: App ()
@@ -972,10 +969,10 @@ makeLenses ''GameState
 instance Default GameState where
   def = GameState 0 []
 
-pos :: HasStates s => Lens' s Int
+pos :: Lens' AppState Int
 pos = makeStateLens pos'
 
-treasures :: HasStates s => Lens' s [Int]
+treasures :: Lens' AppState [Int]
 treasures = makeStateLens treasures'
 
 handleKeypress :: KeyPress -> App ()
@@ -986,7 +983,7 @@ handleKeypress (KeyPress c) = do
     _ -> return ()
   collectTreasure
 
-keypressProvider :: Dispatcher -> IO ()
+keypressProvider :: EventDispatcher -> IO ()
 keypressProvider dispatcher = forever $ do
   c <- getChar
   dispatcher (KeyPress c)
@@ -1010,7 +1007,7 @@ render = do
     where
       addTreasures t tunnel = foldr (replaceAt '%') tunnel t
 
-timer :: Dispatcher -> IO ()
+timer :: EventDispatcher -> IO ()
 timer dispatch = forever $ do
   threadDelay 3000000
   dispatch Timer
@@ -1209,7 +1206,7 @@ makeLenses ''Score
 instance Default Score where
   def = Score 0
 
-score :: HasStates s => Lens' s Int
+score :: Lens' AppState Int
 score = makeStateLens score'
 
 addPoint :: App ()
@@ -1257,10 +1254,10 @@ makeLenses ''GameState
 instance Default GameState where
   def = GameState 0 []
 
-pos :: HasStates s => Lens' s Int
+pos :: Lens' AppState Int
 pos = makeStateLens pos'
 
-treasures :: HasStates s => Lens' s [Int]
+treasures :: Lens' AppState [Int]
 treasures = makeStateLens treasures'
 
 handleKeypress :: KeyPress -> App ()
@@ -1271,7 +1268,7 @@ handleKeypress (KeyPress c) = do
     _ -> return ()
   collectTreasure
 
-keypressProvider :: Dispatcher -> IO ()
+keypressProvider :: EventDispatcher -> IO ()
 keypressProvider dispatcher = forever $ do
   c <- getChar
   dispatcher (KeyPress c)
@@ -1298,7 +1295,7 @@ render = do
     where
       addTreasures t tunnel = foldr (replaceAt '%') tunnel t
 
-timer :: Dispatcher -> IO ()
+timer :: EventDispatcher -> IO ()
 timer dispatch = forever $ do
   threadDelay 3000000
   dispatch Timer

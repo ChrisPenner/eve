@@ -27,10 +27,10 @@ makeLenses ''GameState
 instance Default GameState where
   def = GameState 0 []
 
-pos :: HasStates s => Lens' s Int
+pos :: Lens' AppState Int
 pos = makeStateLens pos'
 
-treasures :: HasStates s => Lens' s [Int]
+treasures :: Lens' AppState [Int]
 treasures = makeStateLens treasures'
 
 handleKeypress :: KeyPress -> App ()
@@ -41,7 +41,7 @@ handleKeypress (KeyPress c) = do
     _ -> return ()
   collectTreasure
 
-keypressProvider :: Dispatcher -> IO ()
+keypressProvider :: EventDispatcher -> IO ()
 keypressProvider dispatcher = forever $ do
   c <- getChar
   dispatcher (KeyPress c)
@@ -68,7 +68,7 @@ render = do
     where
       addTreasures t tunnel = foldr (replaceAt '%') tunnel t
 
-timer :: Dispatcher -> IO ()
+timer :: EventDispatcher -> IO ()
 timer dispatch = forever $ do
   threadDelay 3000000
   dispatch Timer
