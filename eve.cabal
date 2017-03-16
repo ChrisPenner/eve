@@ -8,7 +8,7 @@ license-file:        LICENSE
 author:              Chris Penner
 maintainer:          christopher.penner@gmail.com
 copyright:           2017 Chris Penner
-category:            Web
+category:            Framework
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
