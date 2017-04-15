@@ -10,6 +10,10 @@ Use the following sections:
 
 ---
 
+## 0.1.8
+### Added
+- `Action`s now have a Monoid instance.
+
 ## 0.1.7
 ### Changed
 - `Dispatcher` is now called `EventDispatcher` to alleviate confusion.

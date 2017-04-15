@@ -34,6 +34,15 @@ alterSimpleState = do
   myString .= "Hello!"
   use myString
 
+monoidTest :: ActionT AppState SimpleState Identity (String, [Int])
+monoidTest = do
+  result <- one `mappend` two
+  str <- use myString
+  return (str, result)
+  where
+    one = myString .= "first" >> return [1]
+    two = myString <>= "second" >> return [2]
+
 spec :: Spec
 spec = do
   describe "Exiting" $ do
@@ -64,3 +73,8 @@ spec = do
     it "compiles" $
       let (alterationResult, _) = noIOTest (runAction alterSimpleState :: AppT AppState Identity String)
        in alterationResult `shouldBe` "Hello!"
+
+  describe "is a Monoid" $ do
+    it "combines results and effects" $
+      let (monoidResult, _) = noIOTest (runAction monoidTest :: AppT AppState Identity (String, [Int]))
+       in monoidResult `shouldBe` ("firstsecond", [1, 2])

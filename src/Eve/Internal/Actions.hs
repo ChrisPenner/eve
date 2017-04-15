@@ -42,6 +42,13 @@ newtype ActionT base zoomed m a = ActionT
   { getAction :: FreeT (AppF base m) (StateT zoomed m) a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadState zoomed)
 
+instance (Monoid a, Monad m) => Monoid (ActionT base zoomed m a) where
+  mempty = return mempty
+  a `mappend` b = do
+    a' <- a
+    b' <- b
+    return $ a' `mappend` b'
+
 instance Monad n => MonadFree (AppF base n) (ActionT base zoomed n) where
   wrap (RunApp act) = join . ActionT . liftF . RunApp $ act
 
