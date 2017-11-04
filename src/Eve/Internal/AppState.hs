@@ -71,7 +71,9 @@ type App a = AppT AppState IO a
 -- 'runAction'. For example an 'Action' which operates over a String somewhere in your app state
 -- would be written as:
 --
--- > alterString :: 'Action' String ()
+-- @
+-- alterString :: 'Action' String ()
+-- @
 type Action state a = ActionT AppState state IO a
 
 -- | A more general version of 'App' which lets you specify the underlying monad.
