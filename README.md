@@ -205,3 +205,8 @@ Contributions
 Chatting about features is a key part of Eve's development; come join us in
 the [Chat Room](https://gitter.im/eve-framework/Lobby) to discuss features or 
 improvements!
+
+Related Works
+=============
+
+- [Emulating traditional imperative event loops with functional paradigms](./paper/functional-event-loops.pdf)
