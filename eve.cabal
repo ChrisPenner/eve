@@ -30,6 +30,7 @@ library
                      , free
                      , data-default
                      , containers
+                     , semigroups
   default-language:    Haskell2010
   ghc-options:         -Wall
 
