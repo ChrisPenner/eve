@@ -27,7 +27,7 @@ import Control.Monad.Trans.Free
 import Control.Lens
 import Data.Typeable
 import Data.Default
-import Data.Semigroup as Semigroup
+import Data.Semigroup
 
 -- | An 'App' has the same base and zoomed values.
 type AppT s m a = ActionT s s m a
