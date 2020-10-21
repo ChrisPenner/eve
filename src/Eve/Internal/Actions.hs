@@ -27,6 +27,7 @@ import Control.Monad.Trans.Free
 import Control.Lens
 import Data.Typeable
 import Data.Default
+import Data.Semigroup
 
 -- | An 'App' has the same base and zoomed values.
 type AppT s m a = ActionT s s m a
@@ -42,12 +43,15 @@ newtype ActionT base zoomed m a = ActionT
   { getAction :: FreeT (AppF base m) (StateT zoomed m) a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadState zoomed)
 
-instance (Monoid a, Monad m) => Monoid (ActionT base zoomed m a) where
-  mempty = return mempty
-  a `mappend` b = do
+instance (Semigroup a,Monad m) => Semigroup (ActionT base zoomed m a) where
+  a <> b = do
     a' <- a
     b' <- b
-    return $ a' `mappend` b'
+    return $ a' <> b'
+
+instance (Monoid a, Monad m) => Monoid (ActionT base zoomed m a) where
+  mempty = return mempty
+  mappend = (<>)
 
 instance Monad n => MonadFree (AppF base n) (ActionT base zoomed n) where
   wrap (RunApp act) = join . ActionT . liftF . RunApp $ act
