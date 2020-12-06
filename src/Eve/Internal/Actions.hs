@@ -22,6 +22,7 @@ module Eve.Internal.Actions
   ) where
 
 import Eve.Internal.States
+import Control.Applicative (liftA2)
 import Control.Monad.State
 import Control.Monad.Trans.Free
 import Control.Lens
@@ -43,18 +44,15 @@ newtype ActionT base zoomed m a = ActionT
   { getAction :: FreeT (AppF base m) (StateT zoomed m) a
   } deriving (Functor, Applicative, Monad, MonadIO, MonadState zoomed)
 
-instance (Semigroup a,Monad m) => Semigroup (ActionT base zoomed m a) where
-  a <> b = do
-    a' <- a
-    b' <- b
-    return $ a' <> b'
+instance (Semigroup a, Monad m) => Semigroup (ActionT base zoomed m a) where
+  (<>) = liftA2 (<>)
 
 instance (Monoid a, Monad m) => Monoid (ActionT base zoomed m a) where
   mempty = return mempty
   mappend = (<>)
 
 instance Monad n => MonadFree (AppF base n) (ActionT base zoomed n) where
-  wrap (RunApp act) = join . ActionT . liftF . RunApp $ act
+  wrap = join . ActionT . liftF
 
 instance MonadTrans (ActionT base zoomed) where
   lift = ActionT . lift . lift
@@ -88,7 +86,7 @@ runActionOver = zoom
 
 -- | Allows you to run an 'App' inside of an 'Action'
 runApp :: Monad m => AppT base m a -> ActionT base zoomed m a
-runApp = liftF .  RunApp . unLift . getAction
+runApp = liftF . RunApp . unLift . getAction
 
 -- | Runs an application and returns the value and state.
 runEve :: Monad m => base -> AppT base m a -> m (a, base)
