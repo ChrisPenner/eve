@@ -38,6 +38,7 @@ import Eve.Internal.Async
 import Eve.Internal.Actions
 import Eve.Internal.Events
 
+import Control.Monad (void)
 import Control.Monad.State
 import Control.Lens
 

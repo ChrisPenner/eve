@@ -22,6 +22,7 @@ module Eve.Internal.Actions
   ) where
 
 import Eve.Internal.States
+import Control.Monad (join)
 import Control.Monad.State
 import Control.Monad.Trans.Free
 import Control.Lens
